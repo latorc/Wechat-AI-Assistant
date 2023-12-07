@@ -1,12 +1,14 @@
 import os
 from typing import NamedTuple
 import yaml
+import pathlib
+import logging.config
 from enum import Enum, auto
 
 import common
 
 FILE_CONFIG_LOGGING = 'config_logging.yaml'
-
+LOGGING_DIR = 'logs'
 class AdminCmd(Enum):
     """ 微信机器人管理员命令 """
     help = auto()
@@ -45,9 +47,18 @@ class Config(object):
     """ 管理员命令. 命令:枚举类型"""
     
     def __init__(self, cfg:str) -> None:
-        # 分别读取 logging config 和 bot config
+        """ 初始化配置 
+        args:
+            cfg(str): yaml配置文件
+        """
         self.config_file = cfg
+        
+        # 配置 logging
+        pathlib.Path(LOGGING_DIR).mkdir(parents=True, exist_ok=True)    # 创建logs目录
         self.config_logging = self._load_file(FILE_CONFIG_LOGGING)
+        logging.config.dictConfig(self.config_logging)        
+        
+        # 读取配置        
         self.config_dict = None
         self.reload_config()
 

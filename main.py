@@ -8,9 +8,7 @@ import wcf_wrapper
 import common 
 
 def main(cfg:str):
-    the_config = config.Config(cfg)    # 读取配置文件
-       
-    logging.config.dictConfig(the_config.config_logging)   # 配置logging
+    the_config = config.Config(cfg)    # 初始化配置
     
     common.logger().info("正在创建WechatFerry实例...")
     wcfw = wcf_wrapper.WcfWrapper()

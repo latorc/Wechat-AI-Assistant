@@ -67,6 +67,8 @@ class OpenAIWrapper:
         self.sys_prompt = default_prompt
         self.chat_model = config_openai["chat_model"]
         self.proxy = config_openai.get("proxy", None)
+        self.api_key = config_openai['api_key']
+        self.base_url = config_openai.get("base_url", None)
         
         self.image_model = config_openai.get("image_model", "dall-e-3")
         self.image_quality = config_openai.get("image_quality", "standard")
@@ -87,8 +89,8 @@ class OpenAIWrapper:
             http_client = httpx.Client()
 
         openai_client = OpenAI(
-            api_key=config_openai["api_key"],
-            base_url=config_openai["base_url"],
+            api_key=self.api_key,
+            base_url=self.base_url,
             http_client=http_client,
             timeout=60            
         )

@@ -21,7 +21,6 @@ class WcfWrapper:
     def __init__(self) -> None:
         self.wcf = Wcf(debug=True)   # 创建WechatFerry实例，用于控制wechat
         self.wxid = self.wcf.get_self_wxid()    #自己的微信ID
-        self.contacts = self.get_contacts()
         self.msg_types = self.wcf.get_msg_types()
         self.msg_types[49] = '引用,文件,共享链接,..'
         self.msg_dict:dict[str, WxMsg] = {}
@@ -168,8 +167,8 @@ class WcfWrapper:
         :param at_list: 要@的wxid, @所有人的wxid为'notify@all'
         返回 0 成功，其他失败 
         """
-        log_text = f"发送消息({self.contacts.get(receiver)}): {msg}"
-        common.logger().info('发送消息: %s', msg)
+        log_text = f"发送消息({self.wxid_to_nickname(receiver)}): {msg}"
+        common.logger().info(log_text)
         # 构造'@...前缀'
         # msg 中需要有 @ 名单中一样数量的 @
         at_str = ""

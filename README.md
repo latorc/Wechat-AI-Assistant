@@ -74,14 +74,28 @@ python main.py
 - 引用图片消息 "将图片转化成灰度"
 - 引用公众号文章 "帮我总结一下文章要点"
 
+### 管理员命令
+定义了管理员后 (config.yaml 文件中的 admins 项目), 管理员可以使用管理员命令。默认的命令如下：
+  "$帮助"        # 显示帮助信息
+  "$刷新配置"     # 重新载入程序配置（本文件）
+  "$清除"         # 清除记忆
+  "$加载"         # 为当前对话加载预设
+  "$重置预设"     # 为当前对话重置预设到系统提示词
+这些命令可以在 config.yaml 中修改
 
-一些其他技巧和提示:
+### 对话预设功能
+预设即为对当前对话(群聊或单聊)生效的系统提示词和消息包装方式。
+对AI助理使用命令"$加载 <预设名>"可以为当前对话加载预设。<预设名>为定义在 presets 目录下的同名配置文件。
+要创建自己的预设定义, 请参考 presets 目录下的 default.yaml, 该文件即默认的预设。复制该文件，改名成你的预设名称，并修改其中的预设提示测和消息格式。
+
+
+### 其他技巧和提示:
 1. 可以使用手机模拟器 (如逍遥模拟器) 登录微信, 并登录 Windows 微信客户端, 即可保持微信持续在线。
-2. 一站式解决 API Key 注册充值和中国境内连接 OpenAI API 的问题，推荐使用服务:
+2. 一站式解决 API Key 注册充值和中国境内连接 OpenAI API 的问题，推荐使用服务: [Next API中转服务](https://api.nextweb.fun)
    
-   [Next API中转服务](https://api.nextweb.fun)
-
    可以在线支付和在中国连接的 OpenAI API 服务
+3. 程序调用了 OpenAI 的 Assistant API. 运行时，程序将创建并修改一个名为 "wechat_assistant" 的assistant用于对话。你可以在 [OpenAI Playground](https://platform.openai.com/playground) 测试这个助理。
+4. 程序会上传照片和文件到 OpenAI 进行处理。你可以在 [OpenAI管理后台](https://platform.openai.com/files)查看和删除你的文件。OpenAI 不对文件本身进行收费，但是对文件的总占用空间有限制。
 
 ## 资源
 - 本项目基于WeChatFerry。感谢lich0821大佬的WeChatFerry项目: https://github.com/lich0821/WeChatFerry

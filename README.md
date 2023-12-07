@@ -28,6 +28,7 @@
 2. 克隆项目代码到本地
 ```bash
 git clone https://github.com/latorc/Wechat-AI-Assistant.git
+cd Wechat-AI-Assistant
 ```
 3. (可选) 创建 Python 虚拟环境并激活
 ```bash
@@ -39,7 +40,8 @@ python -m venv .venv
 ```bash
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
-5. 编辑 config.yaml
+5. 编辑配置文件
+重命名配置文件 config_template.yaml 为 config.yaml, 并编辑配置项。
 
 主要配置选项说明如下:
 | 配置项 | 说明 | 举例 |
@@ -50,7 +52,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 | chat_model | 默认使用的聊天模型 | gpt-4-1106-preview |
 | admins | 管理员微信号列表, 只有管理员可以使用管理员命令 | [wx1234, wx2345] |
 
-其他配置选项请参见 config.yaml 中的注释
+其他配置选项请参见 config.yaml 中的注释。
 
 6. 运行 main.py
 ```bash
@@ -59,6 +61,8 @@ python main.py
 程序会自动唤起微信客户端, 之后扫码登录微信桌面客户端，即可开始使用。
 
 ## 使用提示
+添加微信AI助理的微信好友, 或将其加入群聊中并@它, 与它进行对话。
+直接与其对话将调用 ChatGPT 进行回答。
 微信AI助理会根据用户的文本, 自主选择调用工具完成任务。现阶段工具包括绘图(OpenAI dall-e-3), 代码解释器, 合成语音(OpenAI API), 访问网页链接等。
 - "画一张猫滑雪的写真照片"
 - "创作一段关于滑雪的说唱并唱给我听"

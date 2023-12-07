@@ -3,7 +3,6 @@ config.yaml
 logs/
 temp/
 .*
-presets/sosobf.yaml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

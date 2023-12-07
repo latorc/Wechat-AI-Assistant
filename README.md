@@ -16,9 +16,7 @@
 
 ## 使用截图
 
-<img src="docs/1.jpg" width="300px">
-<img src="docs/2.jpg" width="300px">
-<img src="docs/3.jpg" width="300px">
+<img src="docs/1.jpg" width="300px"><img src="docs/2.jpg" width="300px"><img src="docs/3.jpg" width="300px">
 
 ## 部署说明
 部署需要的条件:

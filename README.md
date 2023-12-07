@@ -82,3 +82,7 @@ python main.py
    [Next API中转服务](https://api.nextweb.fun)
 
    可以在线支付和在中国连接的 OpenAI API 服务
+
+## 资源
+- 本项目基于WeChatFerry。感谢lich0821大佬的WeChatFerry项目: https://github.com/lich0821/WeChatFerry
+- 推荐: 一键部署自己的ChatGPT网站, ChatGPT-Next-Web 项目: https://github.com/Yidadaa/ChatGPT-Next-Web

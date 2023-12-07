@@ -27,16 +27,17 @@
 1. 安装微信 `3.9.2.23`版本[下载地址](https://github.com/lich0821/WeChatFerry/releases/download/v39.0.7/WeChatSetup-3.9.2.23.exe)
 2. 克隆项目代码到本地
 ```bash
-git clone https://github.com/(tba)
+git clone https://github.com/latorc/Wechat-AI-Assistant.git
 ```
 3. (可选) 创建 Python 虚拟环境并激活
 ```bash
 python -m venv .venv
 .venv\Scripts\activate.bat
 ```
-4. 安装依赖的库 (包含在 requirements.txt 中)
+4. 安装依赖的库
+这里使用清华的来源, 方便中国国内用户快速下载
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 5. 编辑 config.yaml
 

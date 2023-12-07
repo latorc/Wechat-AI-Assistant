@@ -30,7 +30,6 @@
 2. 克隆项目代码到本地
 ```bash
 git clone https://github.com/latorc/Wechat-AI-Assistant.git
-cd Wechat-AI-Assistant
 ```
 3. (可选) 创建 Python 虚拟环境并激活
 ```bash
@@ -40,6 +39,7 @@ python -m venv .venv
 4. 安装依赖的库
 这里使用清华的来源, 方便中国国内用户快速下载
 ```bash
+cd Wechat-AI-Assistant
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
 5. 编辑配置文件

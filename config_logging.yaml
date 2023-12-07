@@ -1,0 +1,40 @@
+#用于配置Logging
+version: 1
+disable_existing_loggers: False
+
+formatters:
+  simple:
+    format: "%(asctime)s %(message)s"
+    datefmt: "%Y-%m-%d %H:%M:%S"
+  error:
+    format: "%(asctime)s %(name)s %(levelname)s %(filename)s::%(funcName)s[%(lineno)d]:%(message)s"
+
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: simple
+    stream: ext://sys.stdout
+
+  info_file_handler:
+    class: logging.handlers.RotatingFileHandler
+    level: INFO
+    formatter: simple
+    filename: logs/info.log
+    maxBytes: 10485760  # 10MB
+    backupCount: 20
+    encoding: utf8
+
+  error_file_handler:
+    class: logging.handlers.RotatingFileHandler
+    level: ERROR
+    formatter: error
+    filename: logs/error.log
+    maxBytes: 10485760  # 10MB
+    backupCount: 20
+    encoding: utf8
+
+loggers:
+  wcf_gpt_bot:
+    level: INFO
+    handlers: [console, info_file_handler, error_file_handler]

@@ -1,25 +1,34 @@
 # 微信AI助理 (Wechat AI Assistant)
-通过微信 Windows 桌面版接入, 调用 OpenAI Assistant API 处理多模态交互的微信AI助理
+在微信中与 AI 助理进行多模态交互, 处理文本、图片、文件和网页链接等各类消息。
 ## 简介
 本项目使用 [WeChatFerry](https://github.com/lich0821/WeChatFerry) 库控制 Windows PC 桌面微信客户端, 调用 OpenAI Assistant API进行智能多模态消息处理。
 
 特点: 
-- 在微信中与 AI 对话, 帮助你完成回答问题、绘图、生成语音、处理文件等多模态任务。
-- 利用 WeChatFerry 库接入 Windows 桌面版微信程序。
-- 使用 OpenAI Assistant API 自动管理对话上下文。
-- AI 自行判断调用代码解释器和外部函数等工具，实现图片、语音、链接、文件等各类对象的处理。
+- 在微信中与 AI 对话, 自动完成绘图、生成语音、处理文件、搜索网页等多模态任务。
+- 利用 WeChatFerry 库接入 Windows 桌面版微信程序, 对微信号的兼容性高(无需实名认证), 风险低。
+- 使用 OpenAI Assistant API 自动管理群聊对话上下文。
+- AI 自行判断调用代码解释器和外部插件等工具，实现图片、语音、链接、文件等各类对象的处理。
+  现有插件:
+  - bing_search: 必应搜索
+  - browse_link: 浏览网页链接
+  - image_to_text: 图像文字描述
+  - text_to_image: 文字描述绘图
+  - text_to_speech: 文本转语音
 
 后续计划开发:
-- 查阅功能, 使 AI 可以访问和创造文件
-- 语音识别
-- AI 调用其他工具实现联网, 天气查询等功能
+- 上传文件, 使 AI 能引用文件内容 (知识库)
+- 语音识别、视频分析
+- AI 调用其他 API
 
 ## 使用案例
 - "画一张猫和水豚一起滑雪的照片"
 - "(引用图片) 根据图片内容作一首诗，并读给我听"
 - "(引用公众号文章或网页链接) 总结一下文章的要点"
 
-<img src="docs/1.jpg" width="240px"> <img src="docs/2.jpg" width="240px"> <img src="docs/3.jpg" width="240px">
+<img src="docs/4.png" width="240px">
+<img src="docs/1.jpg" width="240px">
+<img src="docs/2.jpg" width="240px">
+<img src="docs/3.jpg" width="240px">
 
 ## 部署说明
 部署需要的条件:

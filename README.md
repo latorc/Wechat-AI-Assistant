@@ -1,5 +1,5 @@
 # 微信AI助理 (Wechat AI Assistant)
-在微信中与 AI 助理进行多模态交互, 处理文本、图片、文件和网页链接等各类消息。
+在微信中与 AI 助理进行多模态交互, 处理文本, 图片, 文件, 和网页链接等各类消息。
 ## 简介
 本项目使用 [WeChatFerry](https://github.com/lich0821/WeChatFerry) 库控制 Windows PC 桌面微信客户端, 调用 OpenAI Assistant API进行智能多模态消息处理。
 
@@ -17,25 +17,36 @@
 
 后续计划开发:
 - 上传文件, 使 AI 能引用文件内容 (知识库)
-- 语音识别、视频分析
+- 语音识别, 视频分析
 - AI 调用其他 API
 
 ## 使用案例
 - "画一张猫和水豚一起滑雪的照片"
 - "(引用图片) 根据图片内容作一首诗，并读给我听"
 - "(引用公众号文章或网页链接) 总结一下文章的要点"
+- "搜索关于OPENAI的新闻, 把结果读给我听"
 
 <img src="docs/4.png" width="240px"> <img src="docs/1.jpg" width="240px">
 <img src="docs/2.jpg" width="240px"> <img src="docs/3.jpg" width="240px">
 
 ## 部署说明
-部署需要的条件:
-1. OpenAI API Key
+### 部署需要的条件:
+1. OpenAI API Key. 管理地址: https://platform.openai.com/api-keys
 2. Windows 电脑或服务器
-3. (中国国内) 用于访问OpenAI的代理服务器
+3. (中国国内) 用于访问 OpenAI 的代理服务器
 4. 安装好 Python 环境 (推荐 Python 3.11) 和 Git
+5. Bing Search API Key (可选, 供联网搜索插件使用). 获取地址: https://www.microsoft.com/bing/apis/bing-web-search-api
 
-部署步骤:
+### 方法1: 脚本部署
+到release中下载安装包，执行以下步骤:
+1. 解压安装包
+2. 安装 Python 和 Git 环境
+3. 安装微信指定版本(安装包已提供)
+4. 运行"安装.bat", 获取代码和安装依赖
+5. 修改 config.yaml, 添加 api_key 等必要选项
+6. "运行.bat" 开始运行程序. 程序会唤起微信, 扫码登录即可。
+
+### 方法2: 手动部署
 1. 安装微信`3.9.2.23`版本[下载地址](https://github.com/lich0821/WeChatFerry/releases/download/v39.0.7/WeChatSetup-3.9.2.23.exe)
 2. 克隆项目代码到本地
 ```bash
@@ -72,15 +83,8 @@ python main.py
 
 ## 使用提示
 添加微信AI助理的微信好友, 或将其加入群聊中并@它, 与它进行对话。
-直接与其对话将调用 ChatGPT 进行回答。
-微信AI助理会根据用户的文本, 自主选择调用工具完成任务。现阶段工具包括绘图(OpenAI dall-e-3), 代码解释器, 合成语音(OpenAI API), 访问网页链接等。
-- "画一张猫滑雪的写真照片"
-- "创作一段关于滑雪的说唱并唱给我听"
-
-可以引用微信消息, 让AI助理处理。
-例如: 
-- 引用图片消息 "将图片转化成灰度"
-- 引用公众号文章 "帮我总结一下文章要点"
+直接与其对话将调用 ChatGPT 进行回答。可以发送图片和文件后, 引用图片和文件并@AI助理, 指示其进行处理。
+微信AI助理会根据用户的文本, 自主选择调用工具完成任务。现阶段工具包括绘图(OpenAI dall-e-3), 代码解释器, 合成语音(OpenAI API), 访问网页, 搜索等。
 
 ### 管理员命令
 定义了管理员后 (config.yaml 文件中的 admins 项目), 管理员可以使用管理员命令。默认的命令如下：
@@ -106,6 +110,11 @@ python main.py
   - sys_prompt: 预设的系统提示词
   - msg_format: 包装用户消息的格式字符串, 可用替换变量 {message}=原消息, {wxcode}=发送者微信号, {nickname}=发送者微信昵称。如不设置则直接发送源消息。
 
+### 插件
+插件代表外部函数和 API, 可以供 GPT 模型自主选择调用, 来完成额外任务。 画图, 联网搜索等功能通过插件实现。使用 "$帮助" 命令可以显示启用的插件。
+在 config.yaml 中的 tools 字段中, 定义了启用的插件列表, 以及各个插件的配置选项。要禁用插件, 只需删除或者注释掉该插件对应的配置选项块。
+
+某些插件需要额外配置选项才能工作, 比如 bing_search (必应搜索) 需要 bing search api key 才能工作。
 
 ### 其他技巧和提示
 1. 可以使用手机模拟器 (如逍遥模拟器) 登录微信, 并登录 Windows 微信客户端, 即可保持微信持续在线。
@@ -113,5 +122,6 @@ python main.py
 3. 程序会上传照片和文件到 OpenAI 进行处理。你可以在 [OpenAI管理后台](https://platform.openai.com/files)查看和删除你的文件。OpenAI 不对文件本身进行收费，但是对文件的总占用空间有限制。
 
 ## 资源
-- 本项目基于WeChatFerry。感谢lich0821大佬的WeChatFerry项目: https://github.com/lich0821/WeChatFerry
+- 本项目基于 WeChatFerry. 感谢 lich0821 大佬的 WeChatFerry 项目: https://github.com/lich0821/WeChatFerry
 - 推荐: 一键部署自己的ChatGPT网站, ChatGPT-Next-Web 项目: https://github.com/Yidadaa/ChatGPT-Next-Web
+- 参考: 使用网页版微信登录的微信机器人, ChatGPT-on-Wechat 项目：https://github.com/zhayujie/chatgpt-on-wechat

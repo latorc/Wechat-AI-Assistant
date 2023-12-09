@@ -1,0 +1,48 @@
+from tools.toolbase import *
+import browser
+
+class Tool_browse_link(ToolBase):
+    """ 工具: browse_link
+    浏览网页 返回链接内容 """
+
+    
+    @property
+    def name(self) -> str:
+        return "browse_link"
+    
+    @property
+    def desc(self) -> str:
+        return "访问链接获取网络内容"
+    
+    @property
+    def function_json(self) -> dict:
+        FUNCTION_BROWSE_LINK = {
+            "name": "browse_link",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "url": {
+                        "type": "string",
+                        "description": "URL of the web page"
+                    }
+                },
+                "required": ["url"]
+            },
+            "description": """Access url and retrieve web page content. 访问url并获取网页内容. 
+                Call this function when user wants you to access certain url and get web page content."""
+        }
+        return FUNCTION_BROWSE_LINK
+    
+    def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
+        """ 浏览网页返回文字内容 """
+        args = json.loads(arguments)
+        url = args['url']
+        callback_msg(WxMsgType.text, f"正在获取网页内容")
+        common.logger().info("正在获得网页内容: %s", url)
+        try:
+            proxy = self.config.OPENAI.get('proxy', None)   # 使用openai proxy
+            br = browser.Browser(proxy)
+            text = br.webpage_text(url)
+            return text
+        except Exception as e:
+            return f"获取网页内容失败! 错误: {str(e)}"

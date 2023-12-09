@@ -4,12 +4,10 @@ from selenium import webdriver
 from selenium.webdriver.edge.service import Service as EdgeService
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
 from selenium.webdriver.edge.options import Options as EdgeOptions
-
 from bs4 import BeautifulSoup
 
-
 class Browser:
-    """ 浏览网页"""
+    """ 网页浏览器 """
     
     def __init__(self, proxy:str=None) -> None:
         self.proxy = proxy
@@ -42,6 +40,7 @@ class Browser:
         # 使用BeautifulSoup解析HTML
         soup = BeautifulSoup(html_content, 'html.parser')
         text = soup.get_text()
+        text = '\n'.join(line.strip() for line in text.splitlines() if line.strip())    # 去除多余空行
         driver.quit()
 
         return text

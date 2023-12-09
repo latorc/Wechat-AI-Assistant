@@ -1,30 +1,21 @@
-from enum import Enum
 from typing import Tuple
 from collections import namedtuple
 import os
 from wcferry import Wcf, WxMsg
 import common
+from common import WxMsgType
 import threading
 import xml.etree.ElementTree as ET
-from xml.etree.ElementTree import Element
-
-class WxMsgType(Enum):
-    text = 1
-    image = 3
-    link = 4
-    file = 6
-    voice = 34
-    other = 9999
 
 class WcfWrapper:
-    """处理wechatFerry操作"""
+    """ 处理wechatFerry操作的类 """
     def __init__(self) -> None:
         self.wcf = Wcf(debug=True)   # 创建WechatFerry实例，用于控制wechat
         self.wxid = self.wcf.get_self_wxid()    #自己的微信ID
         self.msg_types = self.wcf.get_msg_types()
         self.msg_types[49] = '引用,文件,共享链接,..'
         self.msg_dict:dict[str, WxMsg] = {}
-        self.lock_image = threading.Lock()
+        self.wcf_lock = threading.Lock()
         
         self.wcf.enable_receiving_msg() # 开始接收消息
         
@@ -32,7 +23,7 @@ class WcfWrapper:
         self.wcf.cleanup()  # 退出清理，否则微信客户端会异常
     
     def msg_preview_str(self, msg:WxMsg) -> str:
-        """ 返回消息预览 """        
+        """ 返回消息预览字符串 """        
         sender = self.wxid_to_nickname(msg.sender)
         if msg.from_group():
             name = self.wxid_to_nickname(msg.roomid) + "|" + sender
@@ -43,22 +34,26 @@ class WcfWrapper:
             preview =  f"({name}, {msg.id}): {msg.content}"
         else:
             type_str = self.msg_types.get(msg.type,"未知类型")
-            preview =  f"({name}, {msg.id}): 类型={msg.type}({type_str})/子类型={self.get_content_type(msg)}"
+            preview =  f"(From={name}, 消息ID={msg.id}): 类型={msg.type}({type_str})/{self.get_content_type(msg)}"
             
         return preview
     
     def wxid_to_nickname(self, wxid) -> str:
-        """ 返回发送人昵称 """
+        """ 返回wxid对应的昵称 """
         sender = self.wcf.get_info_by_wxid(wxid)['name']
         return sender
     
     def wxid_to_wxcode(self, wxid) -> str:
-        """ 返回wxid对应的微信号"""
+        """ 返回wxid对应的微信号 """
         code = self.wcf.get_info_by_wxid(wxid)['code']
         return code
     
     def get_msg(self) -> WxMsg:
-        """ 获取消息+缓存"""
+        """ 获取消息并缓存到列表 
+        
+        Returns:
+            WxMsg: 消息对象        
+        """
         msg = self.wcf.get_msg()
         self.msg_dict[msg.id] = msg
         
@@ -99,8 +94,9 @@ class WcfWrapper:
         """返回被引用的内容, 如果没有返回None
         Args:
             msg (WxMsg): 微信消息对象
+            
         Returns:
-            Tuple[WxMsgType, str]: 类型， 内容(文本或路径)
+            (WxMsgType, str): 类型, 内容(文本或路径)
         """
         # 找到引用的消息
         if msg.type != 49:  #非49 不是引用 
@@ -120,7 +116,7 @@ class WcfWrapper:
             elif type == 3: #图片 下载图片
                 refer_msg:WxMsg = self.msg_dict.get(refer_id, None)
                 if refer_msg:
-                    dl_file = self.wcf.download_image(refer_msg.id, refer_msg.extra, common.TEMP_DIR)
+                    dl_file = self.wcf.download_image(refer_msg.id, refer_msg.extra, common.temp_dir())
                     if dl_file:
                         return WxMsgType.image, dl_file
                 else:
@@ -134,7 +130,7 @@ class WcfWrapper:
                     title = refer_content_xml.find('appmsg/title').text
                     des = refer_content_xml.find('appmsg/des').text
                     url = refer_content_xml.find('appmsg/url').text
-                    text = f"Title: {title}\n Description: {des}\n URL:{url}"
+                    text = f"Title: {title}\nDescription: {des}\nURL:{url}"
                     return WxMsgType.link, text
                 
                 elif content_type == 6:     #文件
@@ -158,16 +154,34 @@ class WcfWrapper:
             
         except Exception as e:
             common.logger().error("读取引用消息发生错误: %s", str(e))    
-            return None, None        
+            return None, None    
+
     
+    def send_message(self, tp:WxMsgType, payload:str, receiver:str, at_list:str="") -> int:
+        """ Universal 通过微信发送各种类型消息
+        Args:
+            tp (WxMsgType): 消息类型
+            payload (str): 消息内容, 文本消息为文本本身, 图片/文件等是文件路径
+            receiver (str): 接收人的 roomid(群聊) 或 wxid(单聊)
+            at_list (str): 消息要@的人的列表
+        Returns:
+            int: 结果。0=成功, 其他数字失败
+        """
+        if tp == WxMsgType.text:
+            return self.send_text(payload, receiver, at_list)
+        elif tp == WxMsgType.image:
+            return self.send_image(payload, receiver)
+        elif tp == WxMsgType.file:
+            return self.send_file(payload, receiver)        
+
     def send_text(self, msg: str, receiver: str, at_list: str = "") -> int:
-        """ 发送微信文字消息
+        """ 微信发送文字消息
         :param msg: 消息字符串
         :param receiver: 接收人wxid或者群id
         :param at_list: 要@的wxid, @所有人的wxid为'notify@all'
         返回 0 成功，其他失败 
         """
-        log_text = f"发送消息({self.wxid_to_nickname(receiver)}): {msg}"
+        log_text = f"微信发送文字给({self.wxid_to_nickname(receiver)}): {msg}"
         common.logger().info(log_text)
         # 构造'@...前缀'
         # msg 中需要有 @ 名单中一样数量的 @
@@ -189,11 +203,14 @@ class WcfWrapper:
         
         return res
     
-    def send_image(self, path:str, receiver:str) -> int:
-        """ 线程安全发送图片wrapper """
-        # common.logger().info()
-        with self.lock_image:
-            return self.wcf.send_image(path, receiver)
+    def send_image(self, file:str, receiver:str) -> int:
+        """ 微信发送图片 """
+        common.logger().info("微信发送图片给(%s): %s", self.wxid_to_nickname(receiver), file)
+        with self.wcf_lock:
+            return self.wcf.send_image(file, receiver)
         
-    def test(self):
-        self.wcf.send
+    def send_file(self, file:str, receiver:str) -> int:
+        """ 微信发送文件"""
+        common.logger().info("微信发送文件给(%s): %s", self.wxid_to_nickname(receiver), file)   
+        with self.wcf_lock:
+            return self.wcf.send_file(file, receiver)

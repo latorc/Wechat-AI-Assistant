@@ -1,32 +1,44 @@
 # 微信AI助理 (Wechat AI Assistant)
-通过微信 Windows 桌面版接入, 调用 OpenAI Assistant API 处理交互的微信AI助理
+在微信中与 AI 助理进行多模态交互, 处理文本、图片、文件和网页链接等各类消息。
 ## 简介
-使用 [WeChatFerry](https://github.com/lich0821/WeChatFerry) 库控制 Windows PC 桌面微信客户端, 访问 OpenAI ChatGPT 会话 / dall-e-3 作图等功能。
+本项目使用 [WeChatFerry](https://github.com/lich0821/WeChatFerry) 库控制 Windows PC 桌面微信客户端, 调用 OpenAI Assistant API进行智能多模态消息处理。
 
 特点: 
-- 在微信中与 AI 对话, 帮助你完成回答问题、绘图、生成语音、处理文件等任务。
-- 利用 Windows 桌面版微信程序登录。
-- 使用 OpenAI Assistant API 自动管理对话上下文
-- AI 自行判断调用代码解释器和外部函数等工具，实现绘图、 语音、读取链接等功能。
+- 在微信中与 AI 对话, 自动完成绘图、生成语音、处理文件、搜索网页等多模态任务。
+- 利用 WeChatFerry 库接入 Windows 桌面版微信程序, 对微信号的兼容性高(无需实名认证), 风险低。
+- 使用 OpenAI Assistant API 自动管理群聊对话上下文。
+- AI 自行判断调用代码解释器和外部插件等工具，实现图片、语音、链接、文件等各类对象的处理。
+  现有插件:
+  - bing_search: 必应搜索
+  - browse_link: 浏览网页链接
+  - image_to_text: 图像文字描述
+  - text_to_image: 文字描述绘图
+  - text_to_speech: 文本转语音
 
 后续计划开发:
-- 查阅功能, 使 AI 可以访问和创造文件
-- 语音识别
-- AI 调用其他工具实现联网, 天气查询等功能
+- 上传文件, 使 AI 能引用文件内容 (知识库)
+- 语音识别、视频分析
+- AI 调用其他 API
 
-## 使用截图
+## 使用案例
+- "画一张猫和水豚一起滑雪的照片"
+- "(引用图片) 根据图片内容作一首诗，并读给我听"
+- "(引用公众号文章或网页链接) 总结一下文章的要点"
 
-<img src="docs/1.jpg" width="300px"><img src="docs/2.jpg" width="300px"><img src="docs/3.jpg" width="300px">
+<img src="docs/4.png" width="240px">
+<img src="docs/1.jpg" width="240px">
+<img src="docs/2.jpg" width="240px">
+<img src="docs/3.jpg" width="240px">
 
 ## 部署说明
 部署需要的条件:
 1. OpenAI API Key
 2. Windows 电脑或服务器
 3. (中国国内) 用于访问OpenAI的代理服务器
-4. Python 环境 (推荐 Python 3.11)
+4. 安装好 Python 环境 (推荐 Python 3.11) 和 Git
 
 部署步骤:
-1. 安装微信 `3.9.2.23`版本[下载地址](https://github.com/lich0821/WeChatFerry/releases/download/v39.0.7/WeChatSetup-3.9.2.23.exe)
+1. 安装微信`3.9.2.23`版本[下载地址](https://github.com/lich0821/WeChatFerry/releases/download/v39.0.7/WeChatSetup-3.9.2.23.exe)
 2. 克隆项目代码到本地
 ```bash
 git clone https://github.com/latorc/Wechat-AI-Assistant.git
@@ -34,24 +46,22 @@ git clone https://github.com/latorc/Wechat-AI-Assistant.git
 3. (可选) 创建 Python 虚拟环境并激活
 ```bash
 python -m venv .venv
-.venv\Scripts\activate.bat
+call .venv\Scripts\activate.bat
 ```
-4. 安装依赖的库
-这里使用清华的来源, 方便中国国内用户快速下载
+4. 安装依赖的库; 这里使用清华的来源, 方便中国国内用户快速下载
 ```bash
 cd Wechat-AI-Assistant
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
-5. 编辑配置文件
-重命名配置文件 config_template.yaml 为 config.yaml, 并编辑配置项。
+5. 编辑配置文件: 重命名配置文件 config_template.yaml 为 config.yaml, 并编辑配置项。
 
-主要配置选项说明如下:
+主要配置项说明如下:
 | 配置项 | 说明 | 举例 |
 | :--- | :--- | :--- |
 | api_key | 你的 OpenAI API Key | sk-abcdefg12345678.... |
 | base_url | OpenAI API 的网址, 使用默认 API 无需改动 | https://api.openai.com/v1 |
 | proxy | 代理服务器地址, 格式为"http://地址:端口号" | http://10.0.0.10:8002 |
-| chat_model | 默认使用的聊天模型 | gpt-4-1106-preview |
+| chat_model | 默认使用的聊天模型 | gpt-4-1106-preview, gpt-3.5-turbo |
 | admins | 管理员微信号列表, 只有管理员可以使用管理员命令 | [wx1234, wx2345] |
 
 其他配置选项请参见 config.yaml 中的注释。
@@ -60,7 +70,7 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```bash
 python main.py
 ```
-程序会自动唤起微信客户端, 之后扫码登录微信桌面客户端，即可开始使用。
+程序会自动唤起微信客户端, 之后扫码登录微信桌面客户端, 即可开始使用。
 
 ## 使用提示
 添加微信AI助理的微信好友, 或将其加入群聊中并@它, 与它进行对话。
@@ -76,26 +86,33 @@ python main.py
 
 ### 管理员命令
 定义了管理员后 (config.yaml 文件中的 admins 项目), 管理员可以使用管理员命令。默认的命令如下：
-  "$帮助"        # 显示帮助信息
-  "$刷新配置"     # 重新载入程序配置（本文件）
-  "$清除"         # 清除记忆
-  "$加载"         # 为当前对话加载预设
-  "$重置预设"     # 为当前对话重置预设到系统提示词
+| 命令 | 说明 | 
+| :--- | :--- |
+| $帮助 | 显示帮助信息 |
+| $刷新配置 | 重新载入程序配置 |
+| $清除 | 清除当前对话记忆 |
+| $加载<预设名> | 为当前对话加载预设 |
+| $重置预设 | 为当前对话重置预设到默认预设 |
+| $预设列表 | 显示可用的预设 |
+| $id | 显示当前对话的id |
+
 这些命令可以在 config.yaml 中修改
 
 ### 对话预设功能
-预设即为对当前对话(群聊或单聊)生效的系统提示词和消息包装方式。
-对AI助理使用命令"$加载 <预设名>"可以为当前对话加载预设。<预设名>为定义在 presets 目录下的同名配置文件。
-要创建自己的预设定义, 请参考 presets 目录下的 default.yaml, 该文件即默认的预设。复制该文件，改名成你的预设名称，并修改其中的预设提示测和消息格式。
+- 对话预设是对当前对话(群聊或单聊)生效的系统提示词和消息包装方式。
+- 对AI助理使用默认命令"\$加载 <预设名>"可以为当前对话加载预设。"$预设列表"可以显示当前可用的预设及其描述。
+- <预设名>为定义在 presets 目录下的同名 yaml 配置文件。
+- default.yaml 是为所有对话使用的默认预设。
+- 要创建自己的预设定义, 请参考 presets 目录下的 default.yaml, 即默认的预设。复制该文件，改名成你的预设名称，并修改其中信息。
+  - desc: 预设的简单描述
+  - sys_prompt: 预设的系统提示词
+  - msg_format: 包装用户消息的格式字符串, 可用替换变量 {message}=原消息, {wxcode}=发送者微信号, {nickname}=发送者微信昵称。如不设置则直接发送源消息。
 
 
-### 其他技巧和提示:
+### 其他技巧和提示
 1. 可以使用手机模拟器 (如逍遥模拟器) 登录微信, 并登录 Windows 微信客户端, 即可保持微信持续在线。
-2. 一站式解决 API Key 注册充值和中国境内连接 OpenAI API 的问题，推荐使用服务: [Next API中转服务](https://api.nextweb.fun)
-   
-   可以在线支付和在中国连接的 OpenAI API 服务
-3. 程序调用了 OpenAI 的 Assistant API. 运行时，程序将创建并修改一个名为 "wechat_assistant" 的assistant用于对话。你可以在 [OpenAI Playground](https://platform.openai.com/playground) 测试这个助理。
-4. 程序会上传照片和文件到 OpenAI 进行处理。你可以在 [OpenAI管理后台](https://platform.openai.com/files)查看和删除你的文件。OpenAI 不对文件本身进行收费，但是对文件的总占用空间有限制。
+2. 程序调用了 OpenAI 的 Assistant API. 运行时，程序将创建并修改一个名为 "wechat_assistant" 的 assistant 用于对话。你可以在 [OpenAI Playground](https://platform.openai.com/playground) 测试这个助理。
+3. 程序会上传照片和文件到 OpenAI 进行处理。你可以在 [OpenAI管理后台](https://platform.openai.com/files)查看和删除你的文件。OpenAI 不对文件本身进行收费，但是对文件的总占用空间有限制。
 
 ## 资源
 - 本项目基于WeChatFerry。感谢lich0821大佬的WeChatFerry项目: https://github.com/lich0821/WeChatFerry

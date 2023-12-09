@@ -25,10 +25,8 @@
 - "(引用图片) 根据图片内容作一首诗，并读给我听"
 - "(引用公众号文章或网页链接) 总结一下文章的要点"
 
-<img src="docs/4.png" width="240px">
-<img src="docs/1.jpg" width="240px">
-<img src="docs/2.jpg" width="240px">
-<img src="docs/3.jpg" width="240px">
+<img src="docs/4.png" width="240px"> <img src="docs/1.jpg" width="240px">
+<img src="docs/2.jpg" width="240px"> <img src="docs/3.jpg" width="240px">
 
 ## 部署说明
 部署需要的条件:

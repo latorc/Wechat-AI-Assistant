@@ -12,7 +12,7 @@ class Tool_browse_link(ToolBase):
     
     @property
     def desc(self) -> str:
-        return "访问链接获取网络内容"
+        return "访问链接获取内容"
     
     @property
     def function_json(self) -> dict:
@@ -37,12 +37,12 @@ class Tool_browse_link(ToolBase):
         """ 浏览网页返回文字内容 """
         args = json.loads(arguments)
         url = args['url']
-        callback_msg(WxMsgType.text, f"正在获取网页内容")
-        common.logger().info("正在获得网页内容: %s", url)
+        callback_msg(WxMsgType.text, f"正在获取链接内容")
+        common.logger().info("正在获得链接内容: %s", url)
         try:
             proxy = self.config.OPENAI.get('proxy', None)   # 使用openai proxy
             br = browser.Browser(proxy)
             text = br.webpage_text(url)
             return text
         except Exception as e:
-            return f"获取网页内容失败! 错误: {str(e)}"
+            return f"获取链接内容失败! 错误: {str(e)}"

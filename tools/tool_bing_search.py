@@ -61,7 +61,7 @@ class Tool_bing_search(ToolBase):
         
         args = json.loads(arguments)
         query = args["search_query"]
-        note = f"正在通过Bing搜索网络: {query}"
+        note = f"正在通过Bing搜索: {query}"
         callback_msg(WxMsgType.text, note)
         common.logger().info(note)
                 
@@ -82,7 +82,14 @@ class Tool_bing_search(ToolBase):
             response = requests.get(endpoint, headers=headers, params=params)
             response.raise_for_status()
             results = response.json()
+            
+            # 精简内容
             web_results = results['webPages']['value']
+            keys_to_del = ['id', 'isFamilyFriendly', 'displayUrl', 'cachedPageUrl', 'language', 'isNavigational']
+            for r in web_results:
+                for k in keys_to_del:
+                    del r[k]
+                    
             return str(web_results)
             
         except Exception as e:

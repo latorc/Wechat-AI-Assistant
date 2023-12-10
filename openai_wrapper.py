@@ -73,10 +73,10 @@ class OpenAIWrapper:
         tools = {}
         for t in tool_list:
             if t.validate_config(): # 检查配置, 启用通过检查的工具
-                common.logger().info("启用工具 %s", t.name)
+                common.logger().info("启用工具 %s (%s)", t.name, t.desc)
                 tools[t.name] = t
             else:
-                common.logger().info("禁用工具 %s", t.name)
+                common.logger().info("禁用工具 %s (%s)", t.name, t.desc)
         return tools
     
     def tools_help(self) -> str:

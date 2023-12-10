@@ -51,7 +51,7 @@ class Tool_text_to_image(ToolBase):
         args = json.loads(arguments)
         prompt = args['prompt']
         quality = args['quality']
-        callback_msg(WxMsgType.text, f"正在为您生成图片({quality}): {prompt}")
+        callback_msg(WxMsgType.text, f"正在为您生成图片({quality})")
         error, revised_prompt, tempfile = self.callback_openai_text_to_image(prompt, quality)
         
         if error is None:  # 绘图成功: 下载并发送

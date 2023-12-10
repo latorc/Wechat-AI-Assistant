@@ -132,10 +132,17 @@ class WcfWrapper:
                 refer_content_xml = ET.fromstring(refermsg_xml.find('content').text)
                 content_type = int(refer_content_xml.find('appmsg/type').text)
                 if content_type in [4,5]:   # 链接或公众号文章
-                    title = refer_content_xml.find('appmsg/title').text
-                    des = refer_content_xml.find('appmsg/des').text
-                    url = refer_content_xml.find('appmsg/url').text
-                    text = f"Title: {title}\nDescription: {des}\nURL:{url}"
+                    texts = []
+                    title = refer_content_xml.find('appmsg/title')
+                    if title is not None:
+                        texts.append(f"标题: {title.text}")                    
+                    des = refer_content_xml.find('appmsg/des')
+                    if des is not None:
+                        texts.append(f"描述: {des.text}")
+                    url = refer_content_xml.find('appmsg/url')
+                    if url is not None:
+                        texts.append(f"URL: {url.text}")                    
+                    text = '\n'.join(texts)
                     return WxMsgType.link, text
                 
                 elif content_type == 6:     #文件

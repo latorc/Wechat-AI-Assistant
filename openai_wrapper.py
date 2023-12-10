@@ -35,14 +35,12 @@ class OpenAIWrapper:
         self.uploaded_files:dict[str,str] = {}        # 已上传文件. file_id:硬盘文件名
         
         self.config = config
-        self.load_config()
-        
-        self.tools:dict[str, toolbase.ToolBase] = self._register_tools()     # 工具列表 {名字:Tool}
-        self.client = self.create_openai_client()
-        self.assist_id = self.get_assistant()
+        self.initialize()
     
-    def load_config(self):
-        """ 载入config选项, 如有必要, 生成默认值 """
+    def initialize(self):
+        """ 初始化: 
+        载入config选项, 如有必要, 生成默认值
+        生成 client / assistant """
         openai_config = self.config.OPENAI
         self.chat_model = openai_config["chat_model"]
         self.proxy = openai_config.get("proxy", None)
@@ -57,8 +55,10 @@ class OpenAIWrapper:
         self.voice_speed:float = openai_config.get("voice_speed", 1.0)
         
         self._default_prompt = self.config.default_preset.sys_prompt    # 默认prompt来自default        
+        self.tools:dict[str, toolbase.ToolBase] = self._register_tools()     # 工具列表 {名字:Tool}
+        self.client = self.create_openai_client()
+        self.assist_id = self.get_assistant()
         
-    
     def _register_tools(self) -> dict:
         """ 注册所有工具 """
         # 把你的Tool类对象加入这个列表, 会载入使用
@@ -252,7 +252,8 @@ class OpenAIWrapper:
             # run 运行结束(complete / failed / ...)，处理新消息
             self._process_new_msgs(thread_id, last_msg_id, callback_msg)
             if run.status == 'failed':
-                common.logger().warning('run id %s 运行失败', run.id)
+                common.logger().warning('run id %s 运行失败:%s', run.id, str(run.last_error))
+                callback_msg(WxMsgType.text, f"API运行失败: {run.last_error.code}")
         finally: 
             if run.status == 'requires_action': # 若中途出错退出, 需要取消运行, 避免thread被锁住
                 common.logger().warning("Run状态=reuires_action, 取消运行以解锁thread")

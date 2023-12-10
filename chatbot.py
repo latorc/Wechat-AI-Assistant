@@ -220,7 +220,7 @@ class Chatbot():
             log_msg = self.help_msg()       
         elif cmd_enum == AdminCmd.reload_config:    # 重新加载config            
             self.config.load_config()
-            self.openai_wrapper.load_config()            
+            self.openai_wrapper.initialize()            
             log_msg = "已完成命令:重新加载配置"            
         elif cmd_enum == AdminCmd.clear_chat:       # 清除记忆
             self.openai_wrapper.clear_chat_thread(receiver)

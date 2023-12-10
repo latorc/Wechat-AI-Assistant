@@ -35,6 +35,17 @@ class Tool_bing_search(ToolBase):
         }
         return FUNCTION_BING_SEARCH
     
+    def validate_config(self) -> bool:
+        """ 验证config, OK返回True"""
+        try:
+            my_cfg:dict = self.config.TOOLS[self.name]
+            api_key:str = my_cfg.get("api_key", None)
+            if not api_key:
+                return False
+            return True
+        except Exception as e:
+            return False            
+    
     def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
         """ 通过Bing搜索获得结果 
         参考: https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/quickstarts/rest/python

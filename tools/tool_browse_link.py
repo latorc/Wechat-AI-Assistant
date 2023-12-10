@@ -23,13 +23,13 @@ class Tool_browse_link(ToolBase):
                 "properties": {
                     "url": {
                         "type": "string",
-                        "description": "URL of the web page"
+                        "description": "User provided URL of the web page"
                     }
                 },
                 "required": ["url"]
             },
             "description": """Access url and retrieve web page content. 访问url并获取网页内容. 
-                Call this function when user wants you to access certain url and get web page content."""
+                Call this function if user explicitly asks you to access certain url and get web page content."""
         }
         return FUNCTION_BROWSE_LINK
     

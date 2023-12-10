@@ -208,7 +208,12 @@ class OpenAIWrapper:
         file_ids = []
         for f in files:
             fid = self.upload_file(f)
-            file_ids.append(fid)
+            if fid:
+                file_ids.append(fid)
+            else:
+                callback_msg(WxMsgType.text, "无法上传该文件到OpenAI处理")
+                return
+                
             
         # 将消息加入对应的thread
         msg = self.client.beta.threads.messages.create(
@@ -232,7 +237,7 @@ class OpenAIWrapper:
             # 运行run, 并处理结果, 直到停止
             while run.status in ('queued','in_progress', 'requires_action', 'cancelling'):
                 if run.status == 'requires_action':     # 调用tool call
-                    self._process_new_msgs(thread_id, last_msg_id, callback_msg)
+                    last_msg_id = self._process_new_msgs(thread_id, last_msg_id, callback_msg)
                     tool_outputs = []
                     
                     # 处理每个tool call, 提交结果
@@ -250,7 +255,7 @@ class OpenAIWrapper:
                     run = self.client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id,timeout=10)
                 
             # run 运行结束(complete / failed / ...)，处理新消息
-            self._process_new_msgs(thread_id, last_msg_id, callback_msg)
+            last_msg_id = self._process_new_msgs(thread_id, last_msg_id, callback_msg)
             if run.status == 'failed':
                 common.logger().warning('run id %s 运行失败:%s', run.id, str(run.last_error))
                 callback_msg(WxMsgType.text, f"API运行失败: {run.last_error.code}")
@@ -298,22 +303,24 @@ class OpenAIWrapper:
             common.logger().info("提交Toolcall(%s)结果(长度=%d): %s", name, len(result), result[0:250])
             return result            
     
-    def text_to_image(self, prompt:str) -> Tuple[str, str, str]:
+    def text_to_image(self, prompt:str, quality:str=None) -> Tuple[str, str, str]:
         """ 调用dall-e作图, 并下载图片到本地
         
         Args:
             prompt (str): 作图提示词
+            quality (str): 图片质量 standard / hd
         
         Returns:
             (str, str, str): 错误信息(成功为None), 修改后prompt, 保存的本地文件名
         """
-        
+        if not quality:
+            quality = self.image_quality
         try:
             res = self.client.images.generate(
                 model=self.image_model,
                 prompt=prompt,
                 size=self.image_size,
-                quality=self.image_quality,
+                quality=quality,
                 n=1,
             )
             revised_prompt = res.data[0].revised_prompt
@@ -353,28 +360,29 @@ class OpenAIWrapper:
             response.stream_to_file(speech_file)
             return None, str(speech_file)
         except Exception as e:
-            return str(e), None
+            return common.error_str(e), None
         
-    def image_to_text(self, file_id:str) -> str:
+    def image_to_text(self, file_id:str, instructions:str) -> str:
         """ 从图片生成文字描述(调用 gpt4-vision) 
         Args:
             file_id (str): OpenAI的file id
+            instructions (str): 用户消息
             
         Returns:
             str: 文字描述
         """
-        filename = self.uploaded_files.get(file_id, None)    # 查找已上传文件名
-        if filename is None:
-            return "错误: 无法找到本地图片"
+        local_file = self.uploaded_files.get(file_id, None)    # 查找本地文件
+        if local_file is None:              # 没有本地文件, 从openai下载
+            local_file = self.download_openai_file(file_id)
         
-        with open(filename, "rb") as image_file:    # base64编码
+        with open(local_file, "rb") as image_file:    # base64编码
             base64_image = base64.b64encode(image_file.read()).decode('utf-8')
         
         PROMPT_MESSAGES = [
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text":"将图片转化成文本"},
+                    {"type": "text", "text":instructions},
                     {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{base64_image}"}}
                 ],
             },        
@@ -382,9 +390,9 @@ class OpenAIWrapper:
         params = {
             "model": "gpt-4-vision-preview",
             "messages": PROMPT_MESSAGES,
-            "max_tokens": 500
+            "max_tokens": 1000
         }
-        # 调用gpt获取图片文本
+        # 调用api
         result = self.client.chat.completions.create(**params)
         return result.choices[0].message.content
     

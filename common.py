@@ -17,7 +17,7 @@ class WxMsgType(Enum):
     link = 4        # 链接
     file = 6        # 文件
     voice = 34      # 语音
-    other = 9999    # 其他
+    ERROR = 9000    # 错误
 
 
 def now_str() -> str:

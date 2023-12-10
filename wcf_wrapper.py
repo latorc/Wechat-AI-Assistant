@@ -1,6 +1,8 @@
 from typing import Tuple
 from collections import namedtuple
 import os
+import re
+import pathlib
 from wcferry import Wcf, WxMsg
 import common
 from common import WxMsgType
@@ -114,14 +116,17 @@ class WcfWrapper:
             if type == 1:   #文本
                 return (WxMsgType.text, refermsg_xml.find('content').text)
             elif type == 3: #图片 下载图片
-                refer_msg:WxMsg = self.msg_dict.get(refer_id, None)
-                if refer_msg:
-                    dl_file = self.wcf.download_image(refer_msg.id, refer_msg.extra, common.temp_dir())
+                refer_extra = self.get_msg_extra(refer_id, msg.extra)
+                # refer_msg:WxMsg = self.msg_dict.get(refer_id, None)
+                # if refer_msg:
+                    # dl_file = self.wcf.download_image(refer_msg.id, refer_msg.extra, common.temp_dir())
+                if refer_extra:
+                    dl_file = self.wcf.download_image(refer_id, refer_extra, common.temp_dir())
                     if dl_file:
                         return WxMsgType.image, dl_file
-                else:
-                    common.logger().warn("无法获得被引用消息中的图片, 消息id=%s", str(refer_id))
-                    return None, None
+                    
+                common.logger().warn("无法获得被引用消息中的图片, 消息id=%s", str(refer_id))
+                return WxMsgType.ERROR, None
                 
             elif type == 49:        # 文件，链接，公众号文章，或另一个引用. 需要进一步判断                
                 refer_content_xml = ET.fromstring(refermsg_xml.find('content').text)
@@ -134,27 +139,69 @@ class WcfWrapper:
                     return WxMsgType.link, text
                 
                 elif content_type == 6:     #文件
-                    refer_msg = self.msg_dict.get(refer_id, None)
-                    if refer_msg:
-                        dl_file = refer_msg.extra
+                    # refer_msg = self.msg_dict.get(refer_id, None)
+                    refer_extra = self.get_msg_extra(refer_id, msg.extra)
+                    if refer_extra:
+                        dl_file = refer_extra
+                        # self.wcf.download_attach() 会崩溃
                         if os.path.exists(dl_file):
                             return WxMsgType.file, dl_file
-                    else:
-                        common.logger().warn("无法获得被引用消息中的文件, 消息id=%s", str(refer_id))
-                        return None, None
+                    
+                    common.logger().warn("无法获得被引用消息中的文件, 消息id=%s", str(refer_id))
+                    return WxMsgType.ERROR, None
+                
                 elif content_type == 57:     # 另一引用 输出文本部分
                     refer_title = refer_content_xml.find('appmsg/title').text
                     return (WxMsgType.text, refer_title)
+                
                 else:
                     common.logger().warn("未实现该消息类型的处理, type=%s, content_type=%s", str(type), str(content_type))
-                    return None, None
+                    return WxMsgType.ERROR, None
             else:           # 其他引用 暂时不处理 TBA 视频，文章等
                 common.logger().warn("未实现该消息类型的处理, type=%s", str(type))
-                return None, None
+                return WxMsgType.ERROR, None
             
         except Exception as e:
             common.logger().error("读取引用消息发生错误: %s", str(e))    
-            return None, None    
+            return WxMsgType.ERROR, None
+        
+    def get_msg_extra(self, msgid:str, sample_extra:str) -> str:
+        """ 获取历史消息的extra 
+        
+        Args:
+            msgid (str): WxMsg的id
+            sample_extra (str): 同个微信号正常消息的extra
+            
+        Returns:
+            str: 消息extra, 若无法获取返回None
+        """
+        
+        query = f"SELECT * FROM MSG WHERE MsgSvrID={msgid}"
+        msg_data = self.wcf.query_sql('MSG0.db', query)
+        if not msg_data:
+            return None
+        bextra = msg_data[0].get('BytesExtra')
+        
+        # 多种pattern搜索
+        patterns = [
+            b'\x08\x04\x12.(.*?)\x1a',          # 图片
+            b'\x08\x04\x12.(.*?)$',    # 文件
+            b'\x08\x04\x12.(.*?)\x1a'           # 自己发的文件
+            ]
+        match = None
+        for p in patterns:
+            match = re.compile(p).search(bextra)
+            if match:
+                break
+        if not match:
+            return None
+
+        extra = match.group(1)
+        new_extra:str = extra.decode('utf-8')
+        wxid = new_extra.split('\\')[0]
+        path1 = sample_extra.split(wxid)[0]
+        full_path = (pathlib.Path(path1) / pathlib.Path(new_extra)).as_posix()
+        return full_path            
 
     
     def send_message(self, tp:WxMsgType, payload:str, receiver:str, at_list:str="") -> int:
@@ -214,3 +261,23 @@ class WcfWrapper:
         common.logger().info("微信发送文件给(%s): %s", self.wxid_to_nickname(receiver), file)   
         with self.wcf_lock:
             return self.wcf.send_file(file, receiver)
+        
+    def search_msg(self):
+        """ 测试历史消息 """
+        
+        msgs = self.wcf.query_sql('MSG0.db', 'SELECT * FROM MSG LIMIT 50')
+        # for msg in msgs:
+        #     wxmsg = WxMsg()
+            
+        #     wxmsg._is_self = 
+        #     wxmsg._is_group =
+        #     wxmsg.type = msg['Type']
+        #     wxmsg.id = msg['MsgSvrID']
+        #     wxmsg.ts = msg['CreateTime']
+        #     wxmsg.sign = 
+        #     wxmsg.xml = 
+        #     wxmsg.sender = 
+        #     wxmsg.roomid = 
+        #     wxmsg.content = 
+        #     wxmsg.thumb = 
+        #     wxmsg.extra = 

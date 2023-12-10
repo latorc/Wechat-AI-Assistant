@@ -17,21 +17,21 @@ class Tool_bing_search(ToolBase):
     def function_json(self) -> dict:
         FUNCTION_BING_SEARCH = {
             "name": "bing_search",
+            "description": """Search Internet for web results using Bing Search engine. 使用必应搜索引擎, 搜索互联网上的内容.  
+                当用户需要互联网上的最新内容是, 调用这个函数。
+                Use this function when:
+                - User is asking about current events or something that requires real-time information (weather, sports scores, etc.)
+                - User is asking about some term you are totally unfamiliar with (it might be new)""",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "search_query": {
                         "type": "string",
-                        "description": "提交给搜索引擎的搜索关键词。Query term or keywords tha will be sent to the search engine."
+                        "description": "Query term or keywords for the search. 提交给搜索引擎的搜索关键词。"
                     }
                 },
                 "required": ["search_query"]
-            },
-            "description": """使用必应搜索引擎, 搜索互联网上的内容. Search Internet for web results using Bing Search engine. 
-                当用户需要互联网上的最新内容是, 调用这个函数。
-                Use this function when:
-                - User is asking about current events or something that requires real-time information (weather, sports scores, etc.)
-                - User is asking about some term you are totally unfamiliar with (it might be new)"""
+            }            
         }
         return FUNCTION_BING_SEARCH
     

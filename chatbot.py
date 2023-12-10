@@ -102,9 +102,15 @@ class Chatbot():
                 text = text + f"\n网页链接:\n{payload}\n"
             elif tp in (WxMsgType.image, WxMsgType.file):
                 files.append(payload)
+            elif tp == WxMsgType.ERROR:
+                self.wcfw.send_text("获取引用内容失败, 或无法处理该类型引用", receiver, at_list)
+                return
             
             # 调用 OpenAI 运行消息 (阻塞直到全部消息处理结束)
-            common.logger().info("调用AI处理:%s", text)
+            log_msg = f"调用AI处理: {text}"
+            if files:
+                log_msg += f" (附件:{', '.join(files)})"
+            common.logger().info(log_msg)
             self.openai_wrapper.run_msg(receiver, text, files, callback_msg)
         except Exception as e:
             note = f"对不起, 响应该消息时发生错误"

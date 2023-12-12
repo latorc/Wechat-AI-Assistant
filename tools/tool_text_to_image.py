@@ -46,18 +46,20 @@ class Tool_text_to_image(ToolBase):
         }
         return FUNCTION_TEXT_TO_IMAGE
     
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:Callable[[ContentType,str],None]) -> str:
         """ 作图 """
         args = json.loads(arguments)
         prompt = args['prompt']
         quality = args['quality']
-        callback_msg(WxMsgType.text, f"正在为您生成图片({quality})")
-        error, revised_prompt, tempfile = self.callback_openai_text_to_image(prompt, quality)
+        callback_msg(ContentType.text, f"正在为您生成图片({quality})")
+        url, revised_prompt = self.callback_openai_text_to_image(prompt, quality)
         
-        if error is None:  # 绘图成功: 下载并发送
-                callback_msg(WxMsgType.image, tempfile)
-                note = f"成功生成图片并已发送给用户。修改后的提示词: {revised_prompt}"
-        else:           # 绘图错误
-            note = f"失败, 发生错误: {error}"
-        
-        return note
+        # common.logger().info("下载图片: %s", url)
+        tempfile = common.temp_file(f"openai_image_{common.timestamp()}.png")
+        proxy = self.config.OPENAI.get('proxy', None)   # 使用openai proxy
+        res = common.download_file(url, tempfile, proxy)
+        if res == 0:    #下载成功:
+            callback_msg(ContentType.image, tempfile)
+            return f"成功生成图片并已发送给用户。修改后的提示词: {revised_prompt}"
+        else:           #下载失败                
+            return f"下载图片失败。图片地址:{url}, 修改后的提示词: {revised_prompt}"

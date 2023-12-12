@@ -46,7 +46,7 @@ def read_preset(name:str) -> Preset:
         msg_format = yaml_preset.get("msg_format", None)
         return Preset(name, desc, sys_prompt, msg_format)
     except Exception as e:
-        common.logger().error('无法读取预设文件. 错误:%s', common.error_str(e))
+        common.logger().error('无法读取预设文件. 错误:%s', common.error_trace(e))
         return None
 
 def list_preset() -> str:

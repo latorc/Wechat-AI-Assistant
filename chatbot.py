@@ -1,12 +1,12 @@
 import queue
 import re
 from typing import Tuple
-from wcf_wrapper import WcfWrapper, WxMsgType
+from wcf_wrapper import WcfWrapper, ContentType
 from wcferry import WxMsg
 import config
 from config import AdminCmd
 import common
-from common import WxMsgType
+from common import ContentType
 import openai_wrapper
 import preset
 
@@ -22,11 +22,9 @@ class Chatbot():
         self.wcfw = wcfw
         self.config = config
         
-        # 对话预设
         self.chat_presets:dict[str, preset.Preset] = {}     # 每个对话的预设 {roomid或wxid: 预设}
-       
         common.logger().info("初始化OpenAI API...")
-        self.openai_wrapper = openai_wrapper.OpenAIWrapper(config, self.config.default_preset.sys_prompt)
+        self.openai_wrapper = openai_wrapper.OpenAIWrapper(self.config, self.config.default_preset.sys_prompt)
         
     def start_main_loop(self) -> None:
         """
@@ -41,12 +39,12 @@ class Chatbot():
             except queue.Empty:
                 continue  # 无消息，继续
             except Exception as e:
-                common.logger().error("接收微信消息错误: %s", common.error_str(e))
+                common.logger().error("接收微信消息错误: %s", common.error_trace(e))
             
             try:    
                 self.run_wxmsg(msg)
             except Exception as e:
-                common.logger().error("处理消息错误:%s", common.error_str(e))
+                common.logger().error("处理消息错误:%s", common.error_trace(e))
  
     
     def run_wxmsg(self, msg:WxMsg):
@@ -57,7 +55,7 @@ class Chatbot():
         """
         
         content = self._filter_wxmsg(msg)
-        if not content:
+        if content is None:
             return
         
         # 确定回复对象
@@ -78,14 +76,13 @@ class Chatbot():
                 try:
                     self.process_admin_cmd(content, receiver, at_list)
                 except Exception as e:
-                    note = f"执行管理员命令'{content}'发生错误"
-                    common.logger().error("%s: %s", note, str(e))
-                    self.wcfw.send_text(note, receiver, at_list)
+                    common.logger().error("执行管理员命令错误: %s",common.error_trace(e))
+                    self.wcfw.send_text(f"执行管理员命令'{content}'发生错误", receiver, at_list)
                 return
         
         ### 调用 AI 处理消息        
         # 回调函数, 处理 AI 返回消息
-        def callback_msg(tp:WxMsgType, payload:str):
+        def callback_msg(tp:ContentType, payload:str):
             return self.wcfw.send_message(tp, payload,receiver, at_list)
         
         try:
@@ -96,14 +93,23 @@ class Chatbot():
             # 获取引用消息及附件
             tp, payload = self.wcfw.get_refer_content(msg)
             files = []
-            if tp==WxMsgType.text:
-                text = text + f"\n引用文本:\n{payload}\n"
-            elif tp == WxMsgType.link:
-                text = text + f"\n网页链接:\n{payload}\n"
-            elif tp in (WxMsgType.image, WxMsgType.file):
+            if tp is None:  # 无引用内容
+                pass
+            elif tp==ContentType.text:                # 引用文本
+                text = text + f"\n(引用文本:\n{payload})"
+            elif tp == ContentType.link:              # 引用链接
+                text = text + f"\n(引用链接:\n{payload})"
+            elif tp in (ContentType.image, ContentType.file):  # 图片, 文件
                 files.append(payload)
-            elif tp == WxMsgType.ERROR:
-                self.wcfw.send_text("获取引用内容失败, 或无法处理该类型引用", receiver, at_list)
+            elif tp == ContentType.voice:       # 语音
+                audio_trans = self.openai_wrapper.audio_trans(payload)
+                text += f"\n(引用语音消息:\"\n{audio_trans}\")"
+            elif tp == ContentType.ERROR:       # 处理错误
+                self.wcfw.send_text("获取引用内容失败", receiver, at_list)
+                return
+            else:           # 其他
+                # tp == WxMsgType.UNSUPPORTED
+                self.wcfw.send_text("抱歉, 不支持引用这类消息", receiver, at_list)
                 return
             
             # 调用 OpenAI 运行消息 (阻塞直到全部消息处理结束)
@@ -113,9 +119,8 @@ class Chatbot():
             common.logger().info(log_msg)
             self.openai_wrapper.run_msg(receiver, text, files, callback_msg)
         except Exception as e:
-            note = f"对不起, 响应该消息时发生错误"
-            common.logger().error(note + str(e))
-            self.wcfw.send_text(note, receiver, at_list)
+            common.logger().error("响应消息发生错误: %s", common.error_trace(e))
+            self.wcfw.send_text(f"对不起, 响应该消息时发生错误: {common.error_info(e)}", receiver, at_list)
 
     
     def _filter_wxmsg(self, msg:WxMsg) -> str:
@@ -126,6 +131,8 @@ class Chatbot():
         
         # 过滤消息类型
         if msg.type == 1:           # 文本
+            pass
+        elif msg.type == 34:        # 语音
             pass
         elif msg.type == 49:        # 引用/文件/链接？ 进一步看content type
             ct = self.wcfw.get_content_type(msg)
@@ -154,7 +161,9 @@ class Chatbot():
                 return None
 
             if msg.is_at(self.wcfw.wxid):   # @我的消息, 处理
-                content = re.sub(r"@.*?[\u2005|\s]", "", content).strip() #去掉@前缀, 获得消息正文
+                #去掉@前缀, 获得消息正文
+                # 正则匹配: @开头 + 任意字符 + \u2005(1/4空格)或任意空白或结尾
+                content = re.sub(r"@.*?([\u2005\s]|$)", "", content).strip() 
                 return content
             else:   # 其他情况, 忽略
                 return None
@@ -179,7 +188,14 @@ class Chatbot():
             
             # 来自对方消息:
             if not self.config.single_chat_prefix:  # 未定义前缀: 响应所有
-                return content
+                if msg.type == 34:  # 语音
+                    # return None
+                    common.logger().info("转录语音")
+                    audiofile = self.wcfw.wcf.get_audio_msg(msg.id, common.temp_dir()) 
+                    text = self.openai_wrapper.audio_trans(audiofile)
+                    return text
+                else:
+                    return content
             else:
                 for p in self.config.single_chat_prefix:    # 已定义前缀: 只响应前缀开头的消息
                     if content.startswith(p):
@@ -226,7 +242,7 @@ class Chatbot():
             log_msg = self.help_msg()       
         elif cmd_enum == AdminCmd.reload_config:    # 重新加载config            
             self.config.load_config()
-            self.openai_wrapper.initialize()            
+            self.openai_wrapper.load_config()            
             log_msg = "已完成命令:重新加载配置"            
         elif cmd_enum == AdminCmd.clear_chat:       # 清除记忆
             self.openai_wrapper.clear_chat_thread(receiver)

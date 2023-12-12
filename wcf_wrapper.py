@@ -5,7 +5,7 @@ import re
 import pathlib
 from wcferry import Wcf, WxMsg
 import common
-from common import WxMsgType
+from common import ContentType
 import threading
 import xml.etree.ElementTree as ET
 
@@ -16,7 +16,6 @@ class WcfWrapper:
         self.wxid = self.wcf.get_self_wxid()    #自己的微信ID
         self.msg_types = self.wcf.get_msg_types()
         self.msg_types[49] = '引用,文件,共享链接,..'
-        self.msg_dict:dict[str, WxMsg] = {}
         self.wcf_lock = threading.Lock()
         
         self.wcf.enable_receiving_msg() # 开始接收消息
@@ -29,14 +28,17 @@ class WcfWrapper:
         sender = self.wxid_to_nickname(msg.sender)
         if msg.from_group():
             name = self.wxid_to_nickname(msg.roomid) + "|" + sender
+            chatid = msg.roomid
         else:
             name = sender
+            chatid = msg.sender
         
         if msg.is_text():
-            preview =  f"({name}, {msg.id}): {msg.content}"
+            content = msg.content
         else:
-            type_str = self.msg_types.get(msg.type,"未知类型")
-            preview =  f"(From={name}, 消息ID={msg.id}): 类型={msg.type}({type_str})/{self.get_content_type(msg)}"
+            content = f"类型={msg.type}({self.msg_types.get(msg.type,'未知类型')})/{self.get_content_type(msg)}"
+            
+        preview =  f"消息ID={msg.id}, 对话ID={chatid}, 昵称={name}, 消息: {content}"
             
         return preview
     
@@ -51,20 +53,21 @@ class WcfWrapper:
         return code
     
     def get_msg(self) -> WxMsg:
-        """ 获取消息并缓存到列表 
+        """ 从wechat ferry获取消息, 无消息抛异常
         
         Returns:
             WxMsg: 消息对象        
         """
         msg = self.wcf.get_msg()
-        self.msg_dict[msg.id] = msg
+        # if self.msg_dict is None:
+        #     self.msg_dict:dict = {}
+        # self.msg_dict[msg.id] = msg
         
-        if len(self.msg_dict) > 2000:
-            common.logger().info("消息缓存过多, 清理删除一半")
-            keys_to_remove = list(self.msg_dict)[:len(self.msg_dict)//2]  # 获取前一半的键
-            for key in keys_to_remove:
-                del self.msg_dict[key]  # 删除这些键
-                
+        # if len(self.msg_dict) > 2000:
+        #     common.logger().info("消息缓存过多, 清理删除一半")
+        #     keys_to_remove = list(self.msg_dict)[:len(self.msg_dict)//2]  # 获取前一半的键
+        #     for key in keys_to_remove:
+        #         del self.msg_dict[key]  # 删除这些键                
         return msg
     
     def get_msg_text(self, msg:WxMsg) -> str:
@@ -92,7 +95,7 @@ class WcfWrapper:
             return None
         
     
-    def get_refer_content(self, msg:WxMsg) -> Tuple[WxMsgType, str]:
+    def get_refer_content(self, msg:WxMsg) -> Tuple[ContentType, str]:
         """返回被引用的内容, 如果没有返回None
         Args:
             msg (WxMsg): 微信消息对象
@@ -114,19 +117,22 @@ class WcfWrapper:
             type = int(refermsg_xml.find('type').text)  # 被引用消息type
             refer_id = int(refermsg_xml.find('svrid').text)            
             if type == 1:   #文本
-                return (WxMsgType.text, refermsg_xml.find('content').text)
+                return (ContentType.text, refermsg_xml.find('content').text)
             elif type == 3: #图片 下载图片
                 refer_extra = self.get_msg_extra(refer_id, msg.extra)
-                # refer_msg:WxMsg = self.msg_dict.get(refer_id, None)
-                # if refer_msg:
-                    # dl_file = self.wcf.download_image(refer_msg.id, refer_msg.extra, common.temp_dir())
                 if refer_extra:
                     dl_file = self.wcf.download_image(refer_id, refer_extra, common.temp_dir())
                     if dl_file:
-                        return WxMsgType.image, dl_file
+                        return ContentType.image, dl_file
                     
-                common.logger().warn("无法获得被引用消息中的图片, 消息id=%s", str(refer_id))
-                return WxMsgType.ERROR, None
+                common.logger().warn("无法获取引用图片, 消息id=%s", str(refer_id))
+                return ContentType.ERROR, None
+            elif type == 34:    # 语音: 下载语音文件
+                audio_file = self.wcf.get_audio_msg(refer_id, common.temp_dir())
+                if audio_file:
+                    return ContentType.voice, audio_file
+                common.logger().warn("无法获取引用语音, 消息ID=%s", str(refer_id))
+                return ContentType.ERROR, None
                 
             elif type == 49:        # 文件，链接，公众号文章，或另一个引用. 需要进一步判断                
                 refer_content_xml = ET.fromstring(refermsg_xml.find('content').text)
@@ -143,7 +149,7 @@ class WcfWrapper:
                     if url is not None:
                         texts.append(f"URL: {url.text}")                    
                     text = '\n'.join(texts)
-                    return WxMsgType.link, text
+                    return ContentType.link, text
                 
                 elif content_type == 6:     #文件
                     # refer_msg = self.msg_dict.get(refer_id, None)
@@ -152,25 +158,25 @@ class WcfWrapper:
                         dl_file = refer_extra
                         # self.wcf.download_attach() 会崩溃
                         if os.path.exists(dl_file):
-                            return WxMsgType.file, dl_file
+                            return ContentType.file, dl_file
                     
                     common.logger().warn("无法获得被引用消息中的文件, 消息id=%s", str(refer_id))
-                    return WxMsgType.ERROR, None
+                    return ContentType.ERROR, None
                 
                 elif content_type == 57:     # 另一引用 输出文本部分
                     refer_title = refer_content_xml.find('appmsg/title').text
-                    return (WxMsgType.text, refer_title)
+                    return (ContentType.text, refer_title)
                 
                 else:
-                    common.logger().warn("未实现该消息类型的处理, type=%s, content_type=%s", str(type), str(content_type))
-                    return WxMsgType.ERROR, None
-            else:           # 其他引用 暂时不处理 TBA 视频，文章等
-                common.logger().warn("未实现该消息类型的处理, type=%s", str(type))
-                return WxMsgType.ERROR, None
+                    common.logger().warn("不支持该类型引用, type=%s, content_type=%s", str(type), str(content_type))
+                    return ContentType.UNSUPPORTED, None
+            else:           # 其他引用 TBA 视频，文章等
+                common.logger().warn("不支持该类型引用, type=%s", str(type))
+                return ContentType.UNSUPPORTED, None
             
         except Exception as e:
-            common.logger().error("读取引用消息发生错误: %s", str(e))    
-            return WxMsgType.ERROR, None
+            common.logger().error("读取引用消息发生错误: %s", common.error_trace(e))    
+            return ContentType.ERROR, None
         
     def get_msg_extra(self, msgid:str, sample_extra:str) -> str:
         """ 获取历史消息的extra 
@@ -211,7 +217,7 @@ class WcfWrapper:
         return full_path            
 
     
-    def send_message(self, tp:WxMsgType, payload:str, receiver:str, at_list:str="") -> int:
+    def send_message(self, tp:ContentType, payload:str, receiver:str, at_list:str="") -> int:
         """ Universal 通过微信发送各种类型消息
         Args:
             tp (WxMsgType): 消息类型
@@ -221,11 +227,11 @@ class WcfWrapper:
         Returns:
             int: 结果。0=成功, 其他数字失败
         """
-        if tp == WxMsgType.text:
+        if tp == ContentType.text:
             return self.send_text(payload, receiver, at_list)
-        elif tp == WxMsgType.image:
+        elif tp == ContentType.image:
             return self.send_image(payload, receiver)
-        elif tp == WxMsgType.file:
+        elif tp == ContentType.file:
             return self.send_file(payload, receiver)        
 
     def send_text(self, msg: str, receiver: str, at_list: str = "") -> int:
@@ -235,7 +241,7 @@ class WcfWrapper:
         :param at_list: 要@的wxid, @所有人的wxid为'notify@all'
         返回 0 成功，其他失败 
         """
-        log_text = f"微信发送文字给({self.wxid_to_nickname(receiver)}): {msg}"
+        log_text = f"发送文字给{receiver}({self.wxid_to_nickname(receiver)}): {msg}"
         common.logger().info(log_text)
         # 构造'@...前缀'
         # msg 中需要有 @ 名单中一样数量的 @
@@ -259,13 +265,13 @@ class WcfWrapper:
     
     def send_image(self, file:str, receiver:str) -> int:
         """ 微信发送图片 """
-        common.logger().info("微信发送图片给(%s): %s", self.wxid_to_nickname(receiver), file)
+        common.logger().info("发送图片给%s(%s): %s", receiver, self.wxid_to_nickname(receiver), file)
         with self.wcf_lock:
             return self.wcf.send_image(file, receiver)
         
     def send_file(self, file:str, receiver:str) -> int:
         """ 微信发送文件"""
-        common.logger().info("微信发送文件给(%s): %s", self.wxid_to_nickname(receiver), file)   
+        common.logger().info("发送文件给%s(%s): %s", receiver, self.wxid_to_nickname(receiver), file)   
         with self.wcf_lock:
             return self.wcf.send_file(file, receiver)
         

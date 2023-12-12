@@ -26,12 +26,14 @@
 2. Windows 电脑或服务器
 3. (中国国内) 用于访问 OpenAI 的代理服务器
 4. 安装好 Python 环境 (推荐 Python 3.11) 和 Git
-5. (可选, 供联网搜索插件使用) Bing Search API Key. 获取地址: https://www.microsoft.com/bing/apis/bing-web-search-api
+   - Python [下载页面](https://www.python.org/downloads/windows/)
+   - Git [下载页面](https://git-scm.com/download/win)
+5. (可选, 供联网搜索插件使用) Bing Search API Key. [获取地址](https://www.microsoft.com/bing/apis/bing-web-search-api)
 
 ### 方法1: 脚本部署
-1. 到Release中下载并安装包, 解压到本地
+1. 到Release中下载安装包, 解压到本地
 2. 安装 Python 和 Git 环境
-3. 安装微信指定版本(`3.9.2.23` 安装包已提供)
+3. 安装微信指定版本 (`3.9.2.23` 安装包已提供)
 4. 运行"安装.bat", 获取代码和安装依赖
 5. 修改 config.yaml, 添加 api_key 等必要选项
 6. "运行.bat" 开始运行程序. 程序会唤起微信, 扫码登录即可。
@@ -111,6 +113,7 @@ python main.py
 1. 可以使用手机模拟器 (如逍遥模拟器) 登录微信, 并登录 Windows 微信客户端, 即可保持微信持续在线。
 2. 程序调用了 OpenAI 的 Assistant API. 运行时，程序将创建并修改一个名为 "wechat_assistant" 的 assistant 用于对话。你可以在 [OpenAI Playground](https://platform.openai.com/playground) 测试这个助理。
 3. 程序会上传照片和文件到 OpenAI 进行处理。你可以在 [OpenAI管理后台](https://platform.openai.com/files)查看和删除你的文件。OpenAI 不对文件本身进行收费，但是对文件的总占用空间有限制。
+4. 程序把搜索结果和网页全文都发给 OpenAI, 所以 token 使用量较大。省钱可用 gpt-3.5 模型。
 
 ## 资源
 - QQ群: 812016253 [点击加入](https://qm.qq.com/cgi-bin/qm/qr?k=CD7LTR5YAkS-VHtG5MDljRJdpbqzCsS4&jump_from=webapi&authKey=rqQ1ihDTpsyiegPfXkYoxcloXQUQp6EhG2xwWhtTP/Hh9EbRaPQ8I/2QCPbgQ8F4)

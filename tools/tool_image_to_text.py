@@ -49,15 +49,12 @@ class Tool_image_to_text(ToolBase):
         }
         return FUNCTION_IMAGE_TO_TEXT
 
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:Callable[[ContentType,str],None]) -> str:
         """ 根据图片内容生成文字 """
         args = json.loads(arguments)
         fileid = args["file_id"]
         instructions = args["instructions"]
-        callback_msg(WxMsgType.text, f"正在分析图片: {instructions}")
+        callback_msg(ContentType.text, f"正在分析图片: {instructions}")
         common.logger().info("正在分析图片内容, file_id=%s, instructions=%s", fileid, instructions)
-        try:
-            text = self.callback_openai_image_to_text(fileid, instructions)
-            return text
-        except Exception as e:
-            return f"分析图片内失败, 错误: {str(e)}"
+        text = self.callback_openai_image_to_text(fileid, instructions)
+        return text

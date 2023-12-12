@@ -34,13 +34,15 @@ class Browser:
     def webpage_text(self, url:str) -> str:
         """ 访问网页，读取文本内容返回"""
         self.driver.get(url)
-        time.sleep(2)
+        # self.driver.execute_script(f"window.open('{url}');")
+        # self.driver.switch_to.window(self.driver.window_handles[-1])        
+        time.sleep(1)
         html_content = self.driver.page_source
 
         # 使用BeautifulSoup解析HTML        
         soup = BeautifulSoup(html_content, 'html.parser')
         text = self.full_text(soup)
-        self.driver.quit()
+        self.driver.close()
         return text
     
     def full_text(self, soup:BeautifulSoup) -> str:
@@ -58,8 +60,6 @@ class Browser:
                 texts.append(direct_text)
         text = '\n'.join(texts)
         return text
-
-
 
     
 if __name__ == '__main__':

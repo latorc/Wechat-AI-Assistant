@@ -7,10 +7,11 @@ import base64
 import time
 import common
 import config
-from common import WxMsgType
+from common import ContentType
 
-# 导入工具目录下的工具类
+# 导入tools
 from tools import toolbase, tool_image_to_text, tool_text_to_image, tool_browse_link, tool_text_to_speech, tool_bing_search
+
 
 ASSISTANT_NAME = 'wechat_assistant'
 ASSISTANT_DESC = "用于微信机器人的assistant"
@@ -35,9 +36,9 @@ class OpenAIWrapper:
         self.uploaded_files:dict[str,str] = {}        # 已上传文件. file_id:硬盘文件名
         
         self.config = config
-        self.initialize()
+        self.load_config()
     
-    def initialize(self):
+    def load_config(self):
         """ 初始化: 
         载入config选项, 如有必要, 生成默认值
         生成 client / assistant """
@@ -67,7 +68,8 @@ class OpenAIWrapper:
             tool_text_to_image.Tool_text_to_image(self.config, self.text_to_image),
             tool_text_to_speech.Tool_text_to_speech(self.config, self.tts),
             tool_browse_link.Tool_browse_link(self.config),
-            tool_bing_search.Tool_bing_search(self.config)
+            tool_bing_search.Tool_bing_search(self.config),
+            # tool_audio_transcript.Tool_audio_transcript(self.config, self.audio_trans)            
         ]
         
         tools = {}
@@ -179,20 +181,16 @@ class OpenAIWrapper:
         Returns:
             str: openai file id. 如果上传失败返回 None
         """
-        try:
-            fo = self.client.files.create(
-                file=open(filename, "rb"),
-                purpose="assistants"
-            )
-            self.uploaded_files[fo.id] = filename
-            return fo.id
-        except Exception as e:
-            common.logger().warning("上传文件%s失败, 错误: %s", filename, str(e))
-            return None
+        fo = self.client.files.create(
+            file=open(filename, "rb"),
+            purpose="assistants"
+        )
+        self.uploaded_files[fo.id] = filename
+        return fo.id
         
     
     def run_msg(self, chatid:str, msg:str, files:list[str],
-        callback_msg:Callable[[WxMsgType, str], int]):
+        callback_msg:Callable[[ContentType, str], int]):
         """ 将消息传给 openai 处理, 发送返回的结果消息和文件, 并响应中途的工具函数调用
         阻塞进程直到所有结果返回并处理完毕。
         
@@ -207,11 +205,13 @@ class OpenAIWrapper:
         # 上传文件
         file_ids = []
         for f in files:
-            fid = self.upload_file(f)
-            if fid:
+            try:
+                fid = self.upload_file(f)
                 file_ids.append(fid)
-            else:
-                callback_msg(WxMsgType.text, "无法上传该文件到OpenAI处理")
+            except Exception as e:
+                note = "无法上传该文件到OpenAI"
+                common.logger().error(note + common.error_trace(e))
+                callback_msg(ContentType.text, note)
                 return
                 
             
@@ -258,7 +258,7 @@ class OpenAIWrapper:
             last_msg_id = self._process_new_msgs(thread_id, last_msg_id, callback_msg)
             if run.status == 'failed':
                 common.logger().warning('run id %s 运行失败:%s', run.id, str(run.last_error))
-                callback_msg(WxMsgType.text, f"API运行失败: {run.last_error.code}")
+                callback_msg(ContentType.text, f"API运行失败: {run.last_error.code}")
         finally: 
             if run.status == 'requires_action': # 若中途出错退出, 需要取消运行, 避免thread被锁住
                 common.logger().warning("Run状态=reuires_action, 取消运行以解锁thread")
@@ -276,14 +276,14 @@ class OpenAIWrapper:
                     for a in c.text.annotations:            # 去掉所有注释
                         text = text.replace(a.text, "")     
                     text = text.replace('\n\n', '\n')       #去掉多余空行
-                    callback_msg(WxMsgType.text, text)
+                    callback_msg(ContentType.text, text)
                 elif c.type == 'image_file':
                     dl_image = self.download_openai_file(c.image_file.file_id)                      
-                    callback_msg(WxMsgType.text, dl_image)
+                    callback_msg(ContentType.text, dl_image)
             
             for f in m.file_ids:
                 dl_file = self.download_openai_file(f)
-                callback_msg(WxMsgType.file, dl_file)
+                callback_msg(ContentType.file, dl_file)
         
         return last_msg_id
     
@@ -297,13 +297,14 @@ class OpenAIWrapper:
         try:
             result =  tool.process_toolcall(arguments, callback_msg)
         except Exception as e:
-            result = f"调用函数失败. 错误: {str(e)}"
+            result = f"调用函数失败. 错误: {common.error_info(e)}"
+            common.logger().error("调用工具失败: %s", common.error_trace(e))
         finally: 
             # log 结果.           
             common.logger().info("提交Toolcall(%s)结果(长度=%d): %s", name, len(result), result[0:250])
             return result            
     
-    def text_to_image(self, prompt:str, quality:str=None) -> Tuple[str, str, str]:
+    def text_to_image(self, prompt:str, quality:str=None) -> str:
         """ 调用dall-e作图, 并下载图片到本地
         
         Args:
@@ -311,56 +312,43 @@ class OpenAIWrapper:
             quality (str): 图片质量 standard / hd
         
         Returns:
-            (str, str, str): 错误信息(成功为None), 修改后prompt, 保存的本地文件名
+            str,str : 图片的url, 修改过的prompt
         """
         if not quality:
             quality = self.image_quality
-        try:
-            res = self.client.images.generate(
-                model=self.image_model,
-                prompt=prompt,
-                size=self.image_size,
-                quality=quality,
-                n=1,
-            )
-            revised_prompt = res.data[0].revised_prompt
-            url = res.data[0].url
             
-            common.logger().info("下载图片: %s", url)
-            tempfile = common.temp_file(f"openai_image_{common.timestamp()}.png")
-            res = common.download_file(url, tempfile, self.proxy)
-            if res == 0:    #下载成功:
-                return None, revised_prompt, tempfile
-            else:           #下载失败                
-                note = f"成功生成图片, 但下载图片失败。请用户尝试自行下载: {url} "
-                return note, revised_prompt, tempfile 
-        except openai.OpenAIError as e:
-            return self.error_to_text(e), None, None
-        except Exception as e:
-            return str(e), None, None
+        res = self.client.images.generate(
+            model=self.image_model,
+            prompt=prompt,
+            size=self.image_size,
+            quality=quality,
+            n=1,
+        )
+        revised_prompt = res.data[0].revised_prompt
+        url = res.data[0].url
+        return url, revised_prompt
         
-    def tts(self, text:str) -> Tuple[str, str]:
+
+        
+    def tts(self, text:str) -> str:
         """ 调用 api 生成语音并下载文件
         
         Args:
             text (str): 文本内容
             
         Returns: 
-            (str, str): 错误信息(成功为None), 语音文件路径
+            str: 语音文件路径
         """
             
-        try:
-            speech_file = common.temp_file(f"tts_{common.timestamp()}.mp3")
-            response = self.client.audio.speech.create(
-                model="tts-1-hd",
-                voice=self.voice,
-                speed=self.voice_speed,
-                input=text
-            )
-            response.stream_to_file(speech_file)
-            return None, str(speech_file)
-        except Exception as e:
-            return common.error_str(e), None
+        speech_file = common.temp_file(f"tts_{common.timestamp()}.mp3")
+        response = self.client.audio.speech.create(
+            model="tts-1-hd",
+            voice=self.voice,
+            speed=self.voice_speed,
+            input=text
+        )
+        response.stream_to_file(speech_file)
+        return str(speech_file)
         
     def image_to_text(self, file_id:str, instructions:str) -> str:
         """ 从图片生成文字描述(调用 gpt4-vision) 
@@ -395,6 +383,24 @@ class OpenAIWrapper:
         # 调用api
         result = self.client.chat.completions.create(**params)
         return result.choices[0].message.content
+    
+    def audio_trans(self, file:str) -> str:
+        """ 把音频转化成文字 
+        
+        Args:
+            file (str): 音频文件名
+            
+        Return:
+            str: 输出文字        
+        """
+        with open(file, "rb") as f:
+            transcript = self.client.audio.transcriptions.create(
+                file = f,
+                model="whisper-1",
+                response_format="text"
+            )
+        return str(transcript).strip()        
+        
     
     def download_openai_file(self, file_id:str, name_override:str = None) -> str:
         """ 下载 OpenAI 文件保存到临时目录

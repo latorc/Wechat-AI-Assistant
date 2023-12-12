@@ -2,6 +2,8 @@
 import logging
 import requests
 import pathlib
+import sys
+import traceback
 from enum import Enum
 from datetime import datetime
 import openai
@@ -10,7 +12,7 @@ FILE_CONFIG_LOGGING = 'config_logging.yaml'
 TEMP_DIR = 'temp'
 LOGGING_DIR = 'logs'
 PRESET_DIR = 'presets'
-class WxMsgType(Enum):
+class ContentType(Enum):
     """ 表示用微信发送的消息的类型"""
     text = 1        # 文字
     image = 3       # 图片
@@ -18,6 +20,7 @@ class WxMsgType(Enum):
     file = 6        # 文件
     voice = 34      # 语音
     ERROR = 9000    # 错误
+    UNSUPPORTED = 9001  # 不支持类型
 
 
 def now_str() -> str:
@@ -57,15 +60,11 @@ def download_file(url:str, filename:str, proxy:str = None) -> int:
         proxy (str): 代理服务器，例如 "http://1.2.3.4:555". 默认None不适用
     
     Returns:
-        int: 0=成功, 其他数字=失败
-    
+        int: 0=成功, 其他数字=失败    
     """
     # 代理
     if proxy:
-        proxies = {
-            "http": proxy,
-            "https": proxy,
-        }
+        proxies = {"http": proxy, "https": proxy}
     else:
         proxies = None
 
@@ -83,8 +82,8 @@ def download_file(url:str, filename:str, proxy:str = None) -> int:
         return 3
 
         
-def error_str(self, e:Exception) -> str:
-    """ 返回异常错误对应的文本说明"""
+def error_info(e:Exception) -> str:
+    """ 返回给用户解释异常的说明文字 """
     if isinstance(e, openai.AuthenticationError):
         return "OpenAI API错误 - 认证失败"
     if isinstance(e, openai.RateLimitError):
@@ -93,6 +92,20 @@ def error_str(self, e:Exception) -> str:
         return "OpenAI API错误 - 响应超时"
     else:
         return str(e)
+    
+def error_trace(e:Exception) -> str:
+    """ 显示异常追踪信息 Log用
+    
+    Args:
+        e (Exception): 异常
+    
+    Returns:
+        str: 异常信息的追踪文本
+    """        
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    trace_list = traceback.format_exception(exc_type, exc_value, exc_traceback)
+    trace_text = ''.join(trace_list)
+    return trace_text
 
 
 if __name__ == "__main__":

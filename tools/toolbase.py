@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod, abstractproperty
 from typing import Callable
-from wcf_wrapper import WxMsgType
+from wcf_wrapper import ContentType
+import wcf_wrapper
 from config import Config
 # 继承类需要用到
 import json 
@@ -15,7 +16,7 @@ class ToolBase(ABC):
     def __init__(self, config:Config) -> None:
         """ 初始化工具
         args:
-            tools_config (dict): 配置文件中的tools部分字典            
+            config (Config): 配置        
         """
         super().__init__()
         self.config = config
@@ -51,7 +52,7 @@ class ToolBase(ABC):
         pass    
     
     @abstractmethod
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:Callable[[ContentType,str],None]) -> str:
         """ 处理Run中途的toolcall
         参考: https://platform.openai.com/docs/assistants/tools/function-calling
         
@@ -60,4 +61,7 @@ class ToolBase(ABC):
             callback_msg (Callable[[WxMsgType,str],None]): 回调函数, 用于发送微信消息
         Returns:
             str: Toolcall 处理结果
+            
+        Raise:
+            可以raise Exception, 外层会接住
         """

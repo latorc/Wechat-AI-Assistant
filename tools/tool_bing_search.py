@@ -36,7 +36,7 @@ class Tool_bing_search(ToolBase):
         return FUNCTION_BING_SEARCH
     
     def validate_config(self) -> bool:
-        """ 验证config, OK返回True"""
+        """ 验证config, OK返回 True, 失败返回 False"""
         try:
             my_cfg:dict = self.config.TOOLS[self.name]
             api_key:str = my_cfg.get("api_key", None)
@@ -46,7 +46,7 @@ class Tool_bing_search(ToolBase):
         except Exception as e:
             return False            
     
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:Callable[[ContentType,str],None]) -> str:
         """ 通过Bing搜索获得结果 
         参考: https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/quickstarts/rest/python
         """
@@ -62,35 +62,31 @@ class Tool_bing_search(ToolBase):
         args = json.loads(arguments)
         query = args["search_query"]
         note = f"正在通过Bing搜索: {query}"
-        callback_msg(WxMsgType.text, note)
+        callback_msg(ContentType.text, note)
         common.logger().info(note)
                 
-        try:
-            # 组建参数
-            # 参考: https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/reference/query-parameters
-            params = {
-                        "q": query,
-                        "count": 5,
-                        # "textDecorations": True,  # 是否含有字体标签等
-                        "textFormat": "HTML",   
-                        "mkt": 'zh-CN',
-                        "freshness": "Week"
-                    }
-            headers = { 'Ocp-Apim-Subscription-Key': api_key }
+        # 组建参数
+        # 参考: https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/reference/query-parameters
+        params = {
+                    "q": query,
+                    "count": 5,
+                    # "textDecorations": True,  # 是否含有字体标签等
+                    "textFormat": "HTML",   
+                    "mkt": 'zh-CN',
+                    "freshness": "Week"
+                }
+        headers = { 'Ocp-Apim-Subscription-Key': api_key }
 
-            # Call the API        
-            response = requests.get(endpoint, headers=headers, params=params)
-            response.raise_for_status()
-            results = response.json()
-            
-            # 精简内容
-            web_results = results['webPages']['value']
-            keys_to_del = ['id', 'isFamilyFriendly', 'displayUrl', 'cachedPageUrl', 'language', 'isNavigational']
-            for r in web_results:
-                for k in keys_to_del:
-                    del r[k]
-                    
-            return str(web_results)
-            
-        except Exception as e:
-            return f"搜索网络内容失败, 错误: {str(e)}"
+        # Call the API        
+        response = requests.get(endpoint, headers=headers, params=params)
+        response.raise_for_status()
+        results = response.json()
+        
+        # 精简内容
+        web_results = results['webPages']['value']
+        keys_to_del = ['id', 'isFamilyFriendly', 'displayUrl', 'cachedPageUrl', 'language', 'isNavigational']
+        for r in web_results:
+            for k in keys_to_del:
+                del r[k]
+                
+        return str(web_results)

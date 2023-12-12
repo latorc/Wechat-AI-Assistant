@@ -33,16 +33,13 @@ class Tool_browse_link(ToolBase):
         }
         return FUNCTION_BROWSE_LINK
     
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:Callable[[ContentType,str],None]) -> str:
         """ 浏览网页返回文字内容 """
         args = json.loads(arguments)
         url = args['url']
-        callback_msg(WxMsgType.text, f"正在获取链接内容")
+        callback_msg(ContentType.text, f"正在获取链接内容")
         common.logger().info("正在获得链接内容: %s", url)
-        try:
-            proxy = self.config.OPENAI.get('proxy', None)   # 使用openai proxy
-            br = browser.Browser(proxy)
-            text = br.webpage_text(url)
-            return text
-        except Exception as e:
-            return f"获取链接内容失败! 错误: {str(e)}"
+        proxy = self.config.OPENAI.get('proxy', None)   # 使用openai proxy
+        br = browser.Browser(proxy)
+        text = br.webpage_text(url)
+        return text

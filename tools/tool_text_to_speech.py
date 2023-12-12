@@ -35,21 +35,18 @@ class Tool_text_to_speech(ToolBase):
                 },
                 "required": ["text"]
             },
-            "description": "Generate audio speech according to user provided text. 根据用户提供的文本生成语音. Only call this function when user wants you to speak, read out loud, or generate audio speech."
+            "description": "Generate audio speech according to user provided text, when user wants you to speak, read out loud, or generate audio speech."
         }
         return FUNCTION_TTS
     
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:Callable[[ContentType,str],None]) -> str:
         """ 调用openai TTS"""
         args = json.loads(arguments)
         text = args['text']
-        callback_msg(WxMsgType.text, f"正在为您生成语音")
+        callback_msg(ContentType.text, f"正在为您生成语音")
         common.logger().info("正在生成语音:%s", text)
-        error, speech_file = self.callback_openai_tts(text)
-        if error is None:
-            callback_msg(WxMsgType.file, speech_file)
-            note = "成功生成语音并已发送给用户"
-        else:
-            note = f"生成语音失败: {error}"
+        speech_file = self.callback_openai_tts(text)
+        callback_msg(ContentType.file, speech_file)
+        note = "成功生成语音并已发送给用户"
         
         return note

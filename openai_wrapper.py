@@ -9,8 +9,10 @@ import common
 import config
 from common import ContentType
 
+
 # 导入tools
 from tools import toolbase, tool_image_to_text, tool_text_to_image, tool_browse_link, tool_text_to_speech, tool_bing_search
+
 
 
 ASSISTANT_NAME = 'wechat_assistant'
@@ -400,7 +402,7 @@ class OpenAIWrapper:
                 response_format="text"
             )
         return str(transcript).strip()        
-        
+
     
     def download_openai_file(self, file_id:str, name_override:str = None) -> str:
         """ 下载 OpenAI 文件保存到临时目录

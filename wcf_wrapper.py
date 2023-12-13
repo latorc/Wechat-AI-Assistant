@@ -50,6 +50,8 @@ class WcfWrapper:
     def wxid_to_wxcode(self, wxid) -> str:
         """ 返回wxid对应的微信号 """
         code = self.wcf.get_info_by_wxid(wxid)['code']
+        if not code:        # 如果没有code, 用wxid代替
+            return wxid
         return code
     
     def get_msg(self) -> WxMsg:

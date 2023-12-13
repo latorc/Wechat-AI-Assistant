@@ -52,6 +52,7 @@ class Tool_text_to_image(ToolBase):
         prompt = args['prompt']
         quality = args['quality']
         callback_msg(ContentType.text, f"正在为您生成图片({quality})")
+        common.logger().info("调用OpenAI生成图片(%s): %s", quality, prompt)
         url, revised_prompt = self.callback_openai_text_to_image(prompt, quality)
         
         # common.logger().info("下载图片: %s", url)

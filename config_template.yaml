@@ -1,7 +1,7 @@
 openai: # OpenAI 相关配置。# API管理, 用量管理等, 见OpenAI管理后台: https://platform.openai.com/api-keys
   api_key:   # OpenAI API Key, 举例:sk-abc123 
   base_url: https://api.openai.com/v1 # API的网址。原版API使用默认值: https://api.openai.com/v1  
-  proxy: http://10.0.0.32:8002 # 代理服务器地址。格式为"http://地址:端口号"  
+  proxy: # 代理服务器地址。格式为"http://地址:端口号"  
   chat_model: gpt-3.5-turbo-1106 # gpt-3.5-turbo-1106 # gpt-4-1106-preview # 聊天使用模型名称, 参见(https://platform.openai.com/docs/models/overview)
   
   # 作图参数, 参见(https://cookbook.openai.com/articles/what_is_new_with_dalle_3) 以及 api 说明

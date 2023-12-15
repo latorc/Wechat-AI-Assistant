@@ -46,7 +46,7 @@ class Tool_bing_search(ToolBase):
         except Exception as e:
             return False            
     
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[ContentType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:MSG_CALLBACK) -> str:
         """ 通过Bing搜索获得结果 
         参考: https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/quickstarts/rest/python
         """
@@ -62,8 +62,8 @@ class Tool_bing_search(ToolBase):
         args = json.loads(arguments)
         query = args["search_query"]
         note = f"正在通过Bing搜索: {query}"
-        callback_msg(ContentType.text, note)
-        common.logger().info(note)
+        callback_msg(ChatMsg(ContentType.text, note))
+        # common.logger().info(note)
                 
         # 组建参数
         # 参考: https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/reference/query-parameters

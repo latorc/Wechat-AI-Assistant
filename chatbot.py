@@ -6,7 +6,7 @@ from wcferry import WxMsg
 import config
 from config import AdminCmd
 import common
-from common import ContentType
+from common import ContentType, ChatMsg
 import openai_wrapper
 import preset
 
@@ -82,8 +82,8 @@ class Chatbot():
         
         ### 调用 AI 处理消息        
         # 回调函数, 处理 AI 返回消息
-        def callback_msg(tp:ContentType, payload:str):
-            return self.wcfw.send_message(tp, payload,receiver, at_list)
+        def callback_msg(msg:ChatMsg) -> int:
+            return self.wcfw.send_message(msg, receiver, at_list)
         
         try:
             # 根据预设加上格式
@@ -91,32 +91,31 @@ class Chatbot():
             text = preset.construct_msg(content, self.wcfw.wxid_to_wxcode(msg.sender), self.wcfw.wxid_to_nickname(msg.sender))
             
             # 获取引用消息及附件
-            tp, payload = self.wcfw.get_refer_content(msg)
+            refer_msg = self.wcfw.get_refer_content(msg)
             files = []
-            if tp is None:  # 无引用内容
+            if refer_msg is None:  # 无引用内容
                 pass
-            elif tp==ContentType.text:                # 引用文本
-                text = text + f"\n(引用文本:\n{payload})"
-            elif tp == ContentType.link:              # 引用链接
-                text = text + f"\n(引用链接:\n{payload})"
-            elif tp in (ContentType.image, ContentType.file):  # 图片, 文件
-                files.append(payload)
-            elif tp == ContentType.voice:       # 语音
-                audio_trans = self.openai_wrapper.audio_trans(payload)
-                text += f"\n(引用语音消息:\"\n{audio_trans}\")"
-            elif tp == ContentType.ERROR:       # 处理错误
-                self.wcfw.send_text("获取引用内容失败", receiver, at_list)
+            elif refer_msg.type == ContentType.text:                # 引用文本
+                text = text + f"\n(引用文本:\n{refer_msg.content})"
+            elif refer_msg.type == ContentType.link:              # 引用链接
+                text = text + f"\n(引用链接:\n{refer_msg.content})"
+            elif refer_msg.type in (ContentType.image, ContentType.file):  # 图片, 文件
+                files.append(refer_msg.content)
+            elif refer_msg.type == ContentType.voice:       # 语音
+                text += f"\n(语音文件: {refer_msg.content})"
+                # self.openai_wrapper.run_audio_msg(receiver, text, refer_msg.content, callback_msg)       
+            elif refer_msg.type == ContentType.video:       # 视频
+                text += f"\n(视频文件: {refer_msg.content})"
+                # self.openai_wrapper.run_video_msg(receiver, text, refer_msg.content, callback_msg)
+            elif refer_msg.type == ContentType.ERROR:       # 处理错误
+                self.wcfw.send_text("获取引用内容发生错误", receiver, at_list)
                 return
             else:           # 其他
                 # tp == WxMsgType.UNSUPPORTED
                 self.wcfw.send_text("抱歉, 不支持引用这类消息", receiver, at_list)
                 return
             
-            # 调用 OpenAI 运行消息 (阻塞直到全部消息处理结束)
-            log_msg = f"调用AI处理: {text}"
-            if files:
-                log_msg += f" (附件:{', '.join(files)})"
-            common.logger().info(log_msg)
+            # 调用 OpenAI 运行消息 (阻塞直到全部消息处理结束)            
             self.openai_wrapper.run_msg(receiver, text, files, callback_msg)
         except Exception as e:
             common.logger().error("响应消息发生错误: %s", common.error_trace(e))

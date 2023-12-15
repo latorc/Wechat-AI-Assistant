@@ -1,5 +1,6 @@
 """ 常量和公共函数"""
 import logging
+from typing import Callable
 import requests
 import pathlib
 import sys
@@ -8,6 +9,7 @@ from enum import Enum
 from datetime import datetime
 import openai
 
+DEFAULT_CONFIG = "config.yaml"
 FILE_CONFIG_LOGGING = 'config_logging.yaml'
 TEMP_DIR = 'temp'
 LOGGING_DIR = 'logs'
@@ -19,9 +21,22 @@ class ContentType(Enum):
     link = 4        # 链接
     file = 6        # 文件
     voice = 34      # 语音
+    video = 43      # 视频
     ERROR = 9000    # 错误
     UNSUPPORTED = 9001  # 不支持类型
 
+class ChatMsg:
+    """ 代表某种类型的消息, 用于内部数据传递 """
+    def __init__(self, type:ContentType, content:str) -> None:
+        """ 初始化
+        Args:
+            type (ContentType): 附件类型
+            content (str): 附件内容
+        """
+        self.type = type
+        self.content = content
+
+MSG_CALLBACK = Callable[[ChatMsg], int]     # 消息回调函数类型
 
 def now_str() -> str:
     return str(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))

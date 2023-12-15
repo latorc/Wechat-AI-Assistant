@@ -5,13 +5,14 @@ import httpx
 import pathlib
 import base64
 import time
+import cv2
 import common
 import config
-from common import ContentType
+from common import ContentType, ChatMsg, MSG_CALLBACK
 
 
 # 导入tools
-from tools import toolbase, tool_image_to_text, tool_text_to_image, tool_browse_link, tool_text_to_speech, tool_bing_search
+from tools import toolbase
 
 
 
@@ -65,13 +66,22 @@ class OpenAIWrapper:
     def _register_tools(self) -> dict:
         """ 注册所有工具 """
         # 把你的Tool类对象加入这个列表, 会载入使用
+        from tools import tool_image_to_text
+        from tools import tool_text_to_image
+        from tools import tool_browse_link
+        from tools import tool_text_to_speech
+        from tools import tool_bing_search
+        from tools import tool_audio_transcript
+        from tools import tool_video_analysis
+        
         tool_list:list[toolbase.ToolBase] = [
             tool_image_to_text.Tool_image_to_text(self.config, self.image_to_text),
             tool_text_to_image.Tool_text_to_image(self.config, self.text_to_image),
             tool_text_to_speech.Tool_text_to_speech(self.config, self.tts),
             tool_browse_link.Tool_browse_link(self.config),
             tool_bing_search.Tool_bing_search(self.config),
-            # tool_audio_transcript.Tool_audio_transcript(self.config, self.audio_trans)            
+            tool_audio_transcript.Tool_audio_transcript(self.config, self.audio_trans),
+            tool_video_analysis.Tool_video_analysis(self.config, self.video_description)            
         ]
         
         tools = {}
@@ -190,9 +200,15 @@ class OpenAIWrapper:
         self.uploaded_files[fo.id] = filename
         return fo.id
         
+    def run_audio_msg(self, chatid:str, msg:str, audio_file:str,
+        callback_msg:MSG_CALLBACK):
+        """ 将语音消息传给 openai 处理, 发送返回的结果 """
+        audio_trans = self.audio_trans(audio_file)
+        msg += f"\n(语音消息:\"\n{audio_trans}\")"
+        self.run_msg(chatid, msg, [], callback_msg)
     
     def run_msg(self, chatid:str, msg:str, files:list[str],
-        callback_msg:Callable[[ContentType, str], int]):
+        callback_msg:MSG_CALLBACK):
         """ 将消息传给 openai 处理, 发送返回的结果消息和文件, 并响应中途的工具函数调用
         阻塞进程直到所有结果返回并处理完毕。
         
@@ -203,7 +219,12 @@ class OpenAIWrapper:
             callback_msg (WxMsgType, str) -> int: 回调函数, 用于发送一条微信消息。(类型, 内容) -> 结果
         """      
         
-        thread_id = self.get_thread(chatid)        
+        thread_id = self.get_thread(chatid)
+        log_msg = f"调用Assistant处理(Thread={thread_id}): {msg}"
+        if files:
+            log_msg += f" (附件:{', '.join(files)})"
+        common.logger().info(log_msg)
+                
         # 上传文件
         file_ids = []
         for f in files:
@@ -213,7 +234,7 @@ class OpenAIWrapper:
             except Exception as e:
                 note = "无法上传该文件到OpenAI"
                 common.logger().error(note + common.error_trace(e))
-                callback_msg(ContentType.text, note)
+                callback_msg(ChatMsg(ContentType.text, note))
                 return
                 
             
@@ -260,14 +281,14 @@ class OpenAIWrapper:
             last_msg_id = self._process_new_msgs(thread_id, last_msg_id, callback_msg)
             if run.status == 'failed':
                 common.logger().warning('run id %s 运行失败:%s', run.id, str(run.last_error))
-                callback_msg(ContentType.text, f"API运行失败: {run.last_error.code}")
+                callback_msg(ChatMsg(ContentType.text, f"API运行失败: {run.last_error.code}"))
         finally: 
             if run.status == 'requires_action': # 若中途出错退出, 需要取消运行, 避免thread被锁住
                 common.logger().warning("Run状态=reuires_action, 取消运行以解锁thread")
                 self.client.beta.threads.runs.cancel(run.id, thread_id=thread_id)
     
 
-    def _process_new_msgs(self, thread_id, last_msg_id, callback_msg) -> str:
+    def _process_new_msgs(self, thread_id, last_msg_id, callback_msg:MSG_CALLBACK) -> str:
         """ 处理所有在last_msg_id之后的新消息, 返回最后一条消息id"""
         msgs = self.client.beta.threads.messages.list(thread_id=thread_id, order="asc", after=last_msg_id)
         for m in msgs:
@@ -278,25 +299,26 @@ class OpenAIWrapper:
                     for a in c.text.annotations:            # 去掉所有注释
                         text = text.replace(a.text, "")     
                     text = text.replace('\n\n', '\n')       #去掉多余空行
-                    callback_msg(ContentType.text, text)
+                    callback_msg(ChatMsg(ContentType.text, text))
                 elif c.type == 'image_file':
                     dl_image = self.download_openai_file(c.image_file.file_id)                      
-                    callback_msg(ContentType.text, dl_image)
+                    callback_msg(ChatMsg(ContentType.text, dl_image))
             
             for f in m.file_ids:
                 dl_file = self.download_openai_file(f)
-                callback_msg(ContentType.file, dl_file)
+                callback_msg(ChatMsg(ContentType.file, dl_file))
         
         return last_msg_id
     
     
-    def _call_tool(self, name:str, arguments:str, callback_msg:Callable) -> str:
+    def _call_tool(self, name:str, arguments:str, callback_msg:MSG_CALLBACK) -> str:
         """ 处理工具调用, 返回结果 """
         tool = self.tools.get(name, None)
         if tool is None:
             return f"调用函数失败. 未定义函数: {name}"
        
         try:
+            common.logger().info(f"调用函数{name}, 参数:{arguments}")
             result =  tool.process_toolcall(arguments, callback_msg)
         except Exception as e:
             result = f"调用函数失败. 错误: {common.error_info(e)}"
@@ -401,8 +423,74 @@ class OpenAIWrapper:
                 model="whisper-1",
                 response_format="text"
             )
-        return str(transcript).strip()        
+        return str(transcript).strip()
+    
+    
+    def video_description(self, video_file:str, instructions:str) -> str:
+        """ 视频的文字描述
+        Args:
+            video_file (str): 视频文件名
+            instructions (str): 用户指示消息
+        
+        Returns:
+            str: 视频的文字描述
+        
+        """
+        
+        frames = []
 
+        # extract n_frames from video
+        cap = cv2.VideoCapture(video_file)
+        if not cap.isOpened():
+            raise("Unable to open video")
+        frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        
+        # duration of the video n_frames = 上传截图数量
+        duration = frame_count / fps
+        if frame_count <= 20:
+            n_frames = frame_count // 2
+        elif frame_count <= 220:
+            n_frames = 10 + (frame_count - 20) // 20
+        else:
+            n_frames = 20
+        
+        # print(f"frame_count={frame_count}, fps={fps}, duration={duration:.2f}")
+        for i in range(n_frames):
+            cap.set(cv2.CAP_PROP_POS_FRAMES, i * frame_count / n_frames)
+            ret, frame = cap.read()
+            if ret:
+                frames.append(frame)
+            else:
+                raise("Unable to read frame")
+        cap.release()
+        
+        # code each frame using base64
+        frames_base64 = []
+        for frame in frames:
+            _, buffer = cv2.imencode('.jpg', frame)
+            frames_base64.append(base64.b64encode(buffer).decode('utf-8'))
+        content = []
+        content.append({"type": "text", "text": instructions + f"\nAnalyze the video based on the frames attached. These are {n_frames} frames taken from the video at regular time intervals. The video is {duration} seconds long."})
+        for f in frames_base64:
+            content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{f}"}}) 
+        
+        messages = [
+            {
+                "role": "user",
+                "content": content
+            },        
+        ]        
+        params = {
+            "model": "gpt-4-vision-preview",
+            "messages": messages,
+            "max_tokens": 1000
+        }
+        common.logger().info(f"调用gpt4-vision分析视频, 帧数={n_frames}, 时长(秒)={duration:.1f}")
+        result = self.client.chat.completions.create(**params)
+        return result.choices[0].message.content
+        
+        
     
     def download_openai_file(self, file_id:str, name_override:str = None) -> str:
         """ 下载 OpenAI 文件保存到临时目录
@@ -428,3 +516,14 @@ class OpenAIWrapper:
             file.write(file_data_bytes)
             
         return save_name
+    
+    
+if __name__ == "__main__":
+    # Test
+    cfg = config.Config(common.DEFAULT_CONFIG)
+    oaiw = OpenAIWrapper(cfg)
+    video_file = common.temp_dir() + '/' + 'test.mp4'
+    print(f"upload: {video_file}")
+    # file_id = oaiw.upload_file(video_file)
+    text = oaiw.video_description(video_file, "分析视频的内容。")
+    print(text)

@@ -30,6 +30,6 @@ def main(cfg:str):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument('-c', type=str, default='config.yaml', help=f'使用配置文件')
+    parser.add_argument('-c', type=str, default=common.DEFAULT_CONFIG, help=f'使用配置文件')
     c = parser.parse_args().c
     main(c)

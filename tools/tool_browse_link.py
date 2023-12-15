@@ -33,12 +33,12 @@ class Tool_browse_link(ToolBase):
         }
         return FUNCTION_BROWSE_LINK
     
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[ContentType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:MSG_CALLBACK) -> str:
         """ 浏览网页返回文字内容 """
         args = json.loads(arguments)
         url = args['url']
-        callback_msg(ContentType.text, f"正在获取链接内容")
-        common.logger().info("正在获得链接内容: %s", url)
+        callback_msg(ChatMsg(ContentType.text, f"正在获取链接内容"))
+        # common.logger().info("正在获得链接内容: %s", url)
         proxy = self.config.OPENAI.get('proxy', None)   # 使用openai proxy
         br = browser.Browser(proxy)
         text = br.webpage_text(url)

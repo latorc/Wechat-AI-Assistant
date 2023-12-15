@@ -21,25 +21,25 @@ class Tool_audio_transcript(ToolBase):
     def function_json(self) -> dict:
         FUNCTION = {
             "name": "audio_transcript",
-            "description": "Generate transcript based on audio file",
+            "description": "Generate transcript based on provided audio file.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "file_id": {
+                    "file_path": {
                         "type": "string",
-                        "description": "OpenAI file id of the audio file"
+                        "description": "Local path of the AUDIO file on user's computer"
                     }                    
                 },
-                "required": ["file_id"]
+                "required": ["file_path"]
             }                
         }
         return FUNCTION
     
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[ContentType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:MSG_CALLBACK) -> str:
         """ 调用openai whisper 语音转录文字"""
         args = json.loads(arguments)
-        fileid = args["file_id"]
-        callback_msg(ContentType.text, f"正在分析语音")
-        common.logger().info("正在分析语音, file_id=%s", fileid)
-        text = self.callback_audio_trans(fileid)
+        file_path = args["file_path"]
+        # callback_msg(ChatMsg(ContentType.text, f"正在分析语音"))
+        # common.logger().info("正在分析语音: %s", file_path)
+        text = self.callback_audio_trans(file_path)
         return text

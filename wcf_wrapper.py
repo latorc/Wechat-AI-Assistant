@@ -5,7 +5,7 @@ import re
 import pathlib
 from wcferry import Wcf, WxMsg
 import common
-from common import ContentType
+from common import ContentType, ChatMsg
 import threading
 import xml.etree.ElementTree as ET
 
@@ -97,7 +97,7 @@ class WcfWrapper:
             return None
         
     
-    def get_refer_content(self, msg:WxMsg) -> Tuple[ContentType, str]:
+    def get_refer_content(self, msg:WxMsg) -> ChatMsg:
         """返回被引用的内容, 如果没有返回None
         Args:
             msg (WxMsg): 微信消息对象
@@ -107,36 +107,47 @@ class WcfWrapper:
         """
         # 找到引用的消息
         if msg.type != 49:  #非49 不是引用 
-            return None, None
+            return None
         
         try:                      
             content = ET.fromstring(msg.content)
             refermsg_xml = content.find('appmsg/refermsg')
             if refermsg_xml is None:
-                return None, None
+                return None
             
             # 判断refermsg类型            
-            type = int(refermsg_xml.find('type').text)  # 被引用消息type
-            refer_id = int(refermsg_xml.find('svrid').text)            
-            if type == 1:   #文本
-                return (ContentType.text, refermsg_xml.find('content').text)
-            elif type == 3: #图片 下载图片
+            refer_type = int(refermsg_xml.find('type').text)  # 被引用消息type
+            refer_id = int(refermsg_xml.find('svrid').text)   
+                     
+            if refer_type == 1:   #文本
+                return ChatMsg(ContentType.text, refermsg_xml.find('content').text)
+                
+            elif refer_type == 3: #图片 下载图片
                 refer_extra = self.get_msg_extra(refer_id, msg.extra)
                 if refer_extra:
                     dl_file = self.wcf.download_image(refer_id, refer_extra, common.temp_dir())
                     if dl_file:
-                        return ContentType.image, dl_file
-                    
+                        return ChatMsg(ContentType.image, dl_file)                    
                 common.logger().warn("无法获取引用图片, 消息id=%s", str(refer_id))
-                return ContentType.ERROR, None
-            elif type == 34:    # 语音: 下载语音文件
+                return ChatMsg(ContentType.ERROR, None)
+            
+            elif refer_type == 34:    # 语音: 下载语音文件
                 audio_file = self.wcf.get_audio_msg(refer_id, common.temp_dir())
                 if audio_file:
-                    return ContentType.voice, audio_file
-                common.logger().warn("无法获取引用语音, 消息ID=%s", str(refer_id))
-                return ContentType.ERROR, None
+                    return ChatMsg(ContentType.voice, audio_file)
+                else:
+                    common.logger().warn("无法获取引用语音, 消息ID=%s", str(refer_id))
+                    return ChatMsg(ContentType.ERROR, None)
+            
+            elif refer_type == 43: # 视频: 下载视频
+                video_file = self.get_attach(refer_id, msg.extra)
+                if video_file:
+                    return ChatMsg(ContentType.video, video_file)
+                else: 
+                    common.logger().warn("无法获取引用的视频, 引用消息id=%s", str(refer_id))
+                    return ChatMsg(ContentType.ERROR, None)
                 
-            elif type == 49:        # 文件，链接，公众号文章，或另一个引用. 需要进一步判断                
+            elif refer_type == 49:        # 文件，链接，公众号文章，或另一个引用. 需要进一步判断                
                 refer_content_xml = ET.fromstring(refermsg_xml.find('content').text)
                 content_type = int(refer_content_xml.find('appmsg/type').text)
                 if content_type in [4,5]:   # 链接或公众号文章
@@ -151,7 +162,7 @@ class WcfWrapper:
                     if url is not None:
                         texts.append(f"URL: {url.text}")                    
                     text = '\n'.join(texts)
-                    return ContentType.link, text
+                    return ChatMsg(ContentType.link, text)
                 
                 elif content_type == 6:     #文件
                     # refer_msg = self.msg_dict.get(refer_id, None)
@@ -160,25 +171,25 @@ class WcfWrapper:
                         dl_file = refer_extra
                         # self.wcf.download_attach() 会崩溃
                         if os.path.exists(dl_file):
-                            return ContentType.file, dl_file
+                            return ChatMsg(ContentType.file, dl_file)
                     
                     common.logger().warn("无法获得被引用消息中的文件, 消息id=%s", str(refer_id))
-                    return ContentType.ERROR, None
+                    return ChatMsg(ContentType.ERROR, None)
                 
                 elif content_type == 57:     # 另一引用 输出文本部分
                     refer_title = refer_content_xml.find('appmsg/title').text
-                    return (ContentType.text, refer_title)
+                    return ChatMsg(ContentType.text, refer_title)
                 
                 else:
-                    common.logger().warn("不支持该类型引用, type=%s, content_type=%s", str(type), str(content_type))
-                    return ContentType.UNSUPPORTED, None
+                    common.logger().warn("不支持该类型引用, type=%s, content_type=%s", str(refer_type), str(content_type))
+                    return ChatMsg(ContentType.UNSUPPORTED, None)
             else:           # 其他引用 TBA 视频，文章等
-                common.logger().warn("不支持该类型引用, type=%s", str(type))
-                return ContentType.UNSUPPORTED, None
+                common.logger().warn("不支持该类型引用, type=%s", str(refer_type))
+                return ChatMsg(ContentType.UNSUPPORTED, None)
             
         except Exception as e:
             common.logger().error("读取引用消息发生错误: %s", common.error_trace(e))    
-            return ContentType.ERROR, None
+            return ChatMsg(ContentType.ERROR, None)
         
     def get_msg_extra(self, msgid:str, sample_extra:str) -> str:
         """ 获取历史消息的extra 
@@ -219,22 +230,65 @@ class WcfWrapper:
         return full_path            
 
     
-    def send_message(self, tp:ContentType, payload:str, receiver:str, at_list:str="") -> int:
+    def get_attach(self, msgid:str, extra:str) -> str:
+        """ 下载消息附件（视频、文件）
+        Args:
+            msgid (str): 消息id
+            extra (str): 正常消息的extra
+            
+        Returns:
+            str: 下载的文件路径, 若失败返回None        
+        """
+        filename = self.get_msg_extra(msgid, extra)
+        if filename: # 原来下载过
+            if os.path.exists(filename): # 文件还存在
+                return filename
+            else:
+                pass                
+        else:
+            filename = common.temp_file(f"Wechat_video_{common.timestamp()}.mp4")
+        
+        # 需要重新下载
+        res = self.wcf.download_attach(msgid, filename, "")
+        if res == 0:
+            return filename
+        else:
+            return None
+    
+    def send_message(self, chat_msg:ChatMsg, receiver:str, at_list:str="") -> int:
         """ Universal 通过微信发送各种类型消息
         Args:
-            tp (WxMsgType): 消息类型
-            payload (str): 消息内容, 文本消息为文本本身, 图片/文件等是文件路径
+            chat_msg (ChatMsg): 消息对象
             receiver (str): 接收人的 roomid(群聊) 或 wxid(单聊)
             at_list (str): 消息要@的人的列表
         Returns:
             int: 结果。0=成功, 其他数字失败
         """
-        if tp == ContentType.text:
-            return self.send_text(payload, receiver, at_list)
-        elif tp == ContentType.image:
-            return self.send_image(payload, receiver)
-        elif tp == ContentType.file:
-            return self.send_file(payload, receiver)        
+        if chat_msg.type == ContentType.text:
+            return self.send_text(chat_msg.content, receiver, at_list)
+        elif chat_msg.type == ContentType.image:
+            return self.send_image(chat_msg.content, receiver)
+        elif chat_msg.type in (ContentType.file, ContentType.voice, ContentType.video):
+            return self.send_file(chat_msg.content, receiver)
+        else:
+            return 99
+    
+    # def send_message(self, tp:ContentType, payload:str, receiver:str, at_list:str="") -> int:
+    #     """ Universal 通过微信发送各种类型消息
+    #     Args:
+    #         tp (WxMsgType): 消息类型
+    #         payload (str): 消息内容, 文本消息为文本本身, 图片/文件等是文件路径
+    #         receiver (str): 接收人的 roomid(群聊) 或 wxid(单聊)
+    #         at_list (str): 消息要@的人的列表
+    #     Returns:
+    #         int: 结果。0=成功, 其他数字失败
+    #     """
+    #     if tp == ContentType.text:
+    #         return self.send_text(payload, receiver, at_list)
+    #     elif tp == ContentType.image:
+    #         return self.send_image(payload, receiver)
+    #     elif tp == ContentType.file:
+    #         return self.send_file(payload, receiver)        
 
     def send_text(self, msg: str, receiver: str, at_list: str = "") -> int:
         """ 微信发送文字消息

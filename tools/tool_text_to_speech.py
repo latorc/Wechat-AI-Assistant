@@ -39,14 +39,14 @@ class Tool_text_to_speech(ToolBase):
         }
         return FUNCTION_TTS
     
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[ContentType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:MSG_CALLBACK) -> str:
         """ 调用openai TTS"""
         args = json.loads(arguments)
         text = args['text']
-        callback_msg(ContentType.text, f"正在为您生成语音")
-        common.logger().info("正在生成语音:%s", text)
+        callback_msg(ChatMsg(ContentType.text, f"正在为您生成语音"))
+        # common.logger().info("正在生成语音:%s", text)
         speech_file = self.callback_openai_tts(text)
-        callback_msg(ContentType.file, speech_file)
+        callback_msg(ChatMsg(ContentType.file, speech_file))
         note = "成功生成语音并已发送给用户"
         
         return note

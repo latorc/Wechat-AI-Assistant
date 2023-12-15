@@ -1,8 +1,8 @@
 openai: # OpenAI 相关配置。# API管理, 用量管理等, 见OpenAI管理后台: https://platform.openai.com/api-keys
-  api_key: sk-Jxxxxxxxx   # OpenAI API Key  
+  api_key:   # OpenAI API Key, 举例:sk-abc123 
   base_url: https://api.openai.com/v1 # API的网址。原版API使用默认值: https://api.openai.com/v1  
   proxy: http://10.0.0.32:8002 # 代理服务器地址。格式为"http://地址:端口号"  
-  chat_model: gpt-4-1106-preview # 聊天使用模型名称, 参见(https://platform.openai.com/docs/models/overview)
+  chat_model: gpt-3.5-turbo-1106 # gpt-3.5-turbo-1106 # gpt-4-1106-preview # 聊天使用模型名称, 参见(https://platform.openai.com/docs/models/overview)
   
   # 作图参数, 参见(https://cookbook.openai.com/articles/what_is_new_with_dalle_3) 以及 api 说明
   image_model: dall-e-3   # (可选, 默认值: dall-e-3) 作图模型, 选项: dall-e-3, dall-e-2
@@ -11,7 +11,7 @@ openai: # OpenAI 相关配置。# API管理, 用量管理等, 见OpenAI管理后
   
   # 语音参数. 参考: https://platform.openai.com/docs/api-reference/audio/createSpeech
   voice: alloy  # 虚拟配音演员 alloy, echo, fable, onyx, nova, and shimmer 试听: https://platform.openai.com/docs/guides/text-to-speech/voice-options
-  voice_speed: 1.0  # 语音速度, 可选 0.25-4.0 (默认1.0)
+  voice_speed: 1.1  # 语音速度, 可选 0.25-4.0 (默认1.0)
 
 bot:  #机器人相关配置
   # 允许响应的群roomId (例如 2xxxxxx3@chatroom) 如果包含'$all'则响应所有群. 默认值=[$all]
@@ -20,12 +20,12 @@ bot:  #机器人相关配置
   # 单聊消息只响应白名单中的微信号. 包含'$all'则响应所有单聊消息. 默认值=[$all]
   single_chat_whitelist: [$all]
   # 来自自己的消息, 只响应该前缀开头的, 否则忽略。默认值=[]
-  self_prefix: ["$AI", "$ai"]
+  self_prefix: [$ai]
   # 单聊中只响应该前缀开头的消息, 不设置则响应所有消息. 默认值=[$ai]
   single_chat_prefix: []
 
 admin:  # 管理员相关配置
-  admins: [Your_WX_Code]    # 管理员的微信号。只有管理员允许运行管理命令
+  admins: [YourWX]    # 管理员的微信号。只有管理员允许运行管理命令
   help: "$帮助"        # 显示帮助信息
   reload_config: "$刷新配置"  # 重新载入程序配置（本文件）
   clear_chat: "$清除"   # 为当前对话清除记忆
@@ -37,13 +37,17 @@ admin:  # 管理员相关配置
 tools:  # 工具插件列表，以及相关的配置。 未包含在列表内的工具不会启用
   bing_search:  # bing 搜索配置. 
     # 注册获取 Bing search API 见: https://www.microsoft.com/bing/apis/bing-web-search-api
-    api_key: 12345abcde
+    api_key:
     endpoint:    # API 入口地址. 默认使用"https://api.bing.microsoft.com"  +  '/v7.0/search'
   
   browse_link:  # 浏览网页
 
-  image_to_text:
+  image_to_text:  # 图片转文本
 
-  text_to_image:
+  text_to_image:  # 文本作图
 
-  text_to_speech:
+  text_to_speech: # 文本转语音
+
+  audio_transcript: # 语音转文本
+
+  video_analysis: # 分析视频内容

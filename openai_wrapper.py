@@ -129,10 +129,11 @@ class OpenAIWrapper:
         
         # 寻找名称符合的assistant
         assistants = self.client.beta.assistants.list(order='desc', limit=100)
-        for a in assistants.data:
-            if a.name == ASSISTANT_NAME:
-                id = a.id
-                break
+        if assistants.data:
+            for a in assistants.data:
+                if a.name == ASSISTANT_NAME:
+                    id = a.id
+                    break
             
         if id is None:  # 未找到: 创建新的assistant            
             assistant = self.client.beta.assistants.create(model=self.chat_model)

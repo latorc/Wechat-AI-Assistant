@@ -24,7 +24,7 @@ class Chatbot():
         
         self.chat_presets:dict[str, preset.Preset] = {}     # 每个对话的预设 {roomid或wxid: 预设}
         common.logger().info("初始化OpenAI API...")
-        self.openai_wrapper = openai_wrapper.OpenAIWrapper(self.config, self.config.default_preset.sys_prompt)
+        self.openai_wrapper = openai_wrapper.OpenAIWrapper(self.config)
         
     def start_main_loop(self) -> None:
         """

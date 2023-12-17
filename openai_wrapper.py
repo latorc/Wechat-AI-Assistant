@@ -27,7 +27,7 @@ class OpenAIWrapper:
     _default_prompt:str
     """ 默认系统提示词 """
     
-    def __init__(self, config:config.Config, default_prompt:str=None) -> None:
+    def __init__(self, config:config.Config) -> None:
         """ 初始化 OpenAI API
         
         Args:

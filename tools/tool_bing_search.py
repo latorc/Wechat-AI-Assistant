@@ -17,25 +17,36 @@ class Tool_bing_search(ToolBase):
     def function_json(self) -> dict:
         FUNCTION_BING_SEARCH = {
             "name": "bing_search",
+            "description": """Search Internet for web results using Bing Search engine. 使用必应搜索引擎, 搜索互联网上的内容.  
+                当用户需要互联网上的最新内容是, 调用这个函数。
+                Use this function when:
+                - User is asking about current events or something that requires real-time information (weather, sports scores, etc.)
+                - User is asking about some term you are totally unfamiliar with (it might be new)""",
             "parameters": {
                 "type": "object",
                 "properties": {
                     "search_query": {
                         "type": "string",
-                        "description": "提交给搜索引擎的搜索关键词。Query term or keywords tha will be sent to the search engine."
+                        "description": "Query term or keywords for the search. 提交给搜索引擎的搜索关键词。"
                     }
                 },
                 "required": ["search_query"]
-            },
-            "description": """使用必应搜索引擎, 搜索互联网上的内容. Search Internet for web results using Bing Search engine. 
-                当用户需要互联网上的最新内容是, 调用这个函数。
-                Use this function when:
-                - User is asking about current events or something that requires real-time information (weather, sports scores, etc.)
-                - User is asking about some term you are totally unfamiliar with (it might be new)"""
+            }            
         }
         return FUNCTION_BING_SEARCH
     
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
+    def validate_config(self) -> bool:
+        """ 验证config, OK返回 True, 失败返回 False"""
+        try:
+            my_cfg:dict = self.config.TOOLS[self.name]
+            api_key:str = my_cfg.get("api_key", None)
+            if not api_key:
+                return False
+            return True
+        except Exception as e:
+            return False            
+    
+    def process_toolcall(self, arguments:str, callback_msg:MSG_CALLBACK) -> str:
         """ 通过Bing搜索获得结果 
         参考: https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/quickstarts/rest/python
         """
@@ -50,29 +61,32 @@ class Tool_bing_search(ToolBase):
         
         args = json.loads(arguments)
         query = args["search_query"]
-        note = f"正在通过Bing搜索网络: {query}"
-        callback_msg(WxMsgType.text, note)
-        common.logger().info(note)
+        note = f"正在通过Bing搜索: {query}"
+        callback_msg(ChatMsg(ContentType.text, note))
+        # common.logger().info(note)
                 
-        try:
-            # 组建参数
-            # 参考: https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/reference/query-parameters
-            params = {
-                        "q": query,
-                        "count": 5,
-                        # "textDecorations": True,  # 是否含有字体标签等
-                        "textFormat": "HTML",   
-                        "mkt": 'zh-CN',
-                        "freshness": "Week"
-                    }
-            headers = { 'Ocp-Apim-Subscription-Key': api_key }
+        # 组建参数
+        # 参考: https://learn.microsoft.com/en-us/bing/search-apis/bing-web-search/reference/query-parameters
+        params = {
+                    "q": query,
+                    "count": 5,
+                    # "textDecorations": True,  # 是否含有字体标签等
+                    "textFormat": "HTML",   
+                    "mkt": 'zh-CN',
+                    "freshness": "Week"
+                }
+        headers = { 'Ocp-Apim-Subscription-Key': api_key }
 
-            # Call the API        
-            response = requests.get(endpoint, headers=headers, params=params)
-            response.raise_for_status()
-            results = response.json()
-            web_results = results['webPages']['value']
-            return str(web_results)
-            
-        except Exception as e:
-            return f"搜索网络内容失败, 错误: {str(e)}"
+        # Call the API        
+        response = requests.get(endpoint, headers=headers, params=params)
+        response.raise_for_status()
+        results = response.json()
+        
+        # 精简内容
+        web_results = results['webPages']['value']
+        keys_to_del = ['id', 'isFamilyFriendly', 'displayUrl', 'cachedPageUrl', 'language', 'isNavigational']
+        for r in web_results:
+            for k in keys_to_del:
+                del r[k]
+                
+        return str(web_results)

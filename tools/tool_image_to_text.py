@@ -37,22 +37,24 @@ class Tool_image_to_text(ToolBase):
                     "file_id": {
                         "type": "string",
                         "description": "OpenAI file id of the image file"
+                    },
+                    "instructions":{
+                        "type": "string",
+                        "description": "User's instructions or questions regarding this image"    
                     }
                 },
-                "required": ["file_id"]
+                "required": ["file_id", "instructions"]
             },
-            "description": "根据用户提供的图片产生文本描述. Convert the image to text description."
+            "description": "根据图片和用户的指示, 分析图片内容并产生文本描述. Analyze the image content based on user instructions, and generate text description."
         }
         return FUNCTION_IMAGE_TO_TEXT
 
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:MSG_CALLBACK) -> str:
         """ 根据图片内容生成文字 """
         args = json.loads(arguments)
         fileid = args["file_id"]
-        callback_msg(WxMsgType.text, "正在分析图片内容")
-        common.logger().info("正在分析图片内容, file_id=%s", fileid)
-        try:
-            text = self.callback_openai_image_to_text(fileid)
-            return text
-        except Exception as e:
-            return f"分析图片内失败, 错误: {str(e)}"
+        instructions = args["instructions"]
+        callback_msg(ChatMsg(ContentType.text, f"正在分析图片: {instructions}"))
+        # common.logger().info("正在分析图片内容, file_id=%s, instructions=%s", fileid, instructions)
+        text = self.callback_openai_image_to_text(fileid, instructions)
+        return text

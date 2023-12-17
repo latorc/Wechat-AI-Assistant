@@ -25,32 +25,42 @@ class Tool_text_to_image(ToolBase):
     @property
     def function_json(self) -> dict:
         FUNCTION_TEXT_TO_IMAGE = {
-                "name": "text_to_image",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "prompt": {
-                            "type": "string",
-                            "description": "Detailed text prompt used for generating or drawing the image or photo. 详细的文字提示词用于画或生成图片或照片"
-                        }
+            "name": "text_to_image",
+            "description": "Generate image or photo based on user text prompt.",
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "prompt": {
+                        "type": "string",
+                        "description": "User's text description of the desired image."
                     },
-                    "required": ["prompt"]
+                    "quality":{
+                        "type": "string",
+                        "description": "The quality of the image that will be generated. hd creates images with finer details and greater consistency across the image.",
+                        "enum": ["standard", "hd"]
+                    }
+                    
                 },
-                "description": "Draw image or photo from text prompt. 根据用户的文本提示词生成照片或图片. Only call this function when user want you to generate image or photo "
-            }
+                "required": ["prompt", "quality"]
+            }                
+        }
         return FUNCTION_TEXT_TO_IMAGE
     
-    def process_toolcall(self, arguments:str, callback_msg:Callable[[WxMsgType,str],None]) -> str:
+    def process_toolcall(self, arguments:str, callback_msg:MSG_CALLBACK) -> str:
         """ 作图 """
         args = json.loads(arguments)
         prompt = args['prompt']
-        callback_msg(WxMsgType.text, f"正在为您生成图片: {prompt}")
-        error, revised_prompt, tempfile = self.callback_openai_text_to_image(prompt)
+        quality = args['quality']
+        callback_msg(ChatMsg(ContentType.text, f"正在为您生成图片({quality})"))
+        # common.logger().info("调用OpenAI生成图片(%s): %s", quality, prompt)
+        url, revised_prompt = self.callback_openai_text_to_image(prompt, quality)
         
-        if error is None:  # 绘图成功: 下载并发送
-                callback_msg(WxMsgType.image, tempfile)
-                note = f"成功生成图片并已发送给用户。修改后的提示词: {revised_prompt}"
-        else:           # 绘图错误
-            note = f"失败, 发生错误: {error}"
-        
-        return note
+        # common.logger().info("下载图片: %s", url)
+        tempfile = common.temp_file(f"openai_image_{common.timestamp()}.png")
+        proxy = self.config.OPENAI.get('proxy', None)   # 使用openai proxy
+        res = common.download_file(url, tempfile, proxy)
+        if res == 0:    #下载成功:
+            callback_msg(ChatMsg(ContentType.image, tempfile))
+            return f"成功生成图片并已发送给用户。修改后的提示词: {revised_prompt}"
+        else:           #下载失败                
+            return f"下载图片失败。图片地址:{url}, 修改后的提示词: {revised_prompt}"

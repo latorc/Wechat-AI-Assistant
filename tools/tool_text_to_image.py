@@ -26,7 +26,7 @@ class Tool_text_to_image(ToolBase):
     def function_json(self) -> dict:
         FUNCTION_TEXT_TO_IMAGE = {
             "name": "text_to_image",
-            "description": "Generate image or photo based on user text prompt.",
+            "description": "Generate image or photo based on user text prompt when user explicitly requests to generate iamge or photo",
             "parameters": {
                 "type": "object",
                 "properties": {

@@ -75,8 +75,8 @@ class Config(object):
 
     def _load_file(self, file) -> dict:
         """ 从文件读取config, 存到dict"""
-        pwd = os.path.dirname(os.path.abspath(__file__))
-        with open(f"{pwd}/{file}", "rb") as fp:
+        # pwd = os.path.dirname(os.path.abspath(__file__))
+        with open(file, "rb") as fp:
             yconfig = yaml.safe_load(fp)
         
         return yconfig

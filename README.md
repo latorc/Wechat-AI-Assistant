@@ -1,7 +1,7 @@
 # 微信 AI 助理 (Wechat AI Assistant)
 在微信中与 AI 助理进行多模态交互, 处理文本, 图片, 文件, 和网页链接等各类消息。
 ## 简介
-本项目使用 [WeChatFerry](https://github.com/lich0821/WeChatFerry) 库控制 Windows PC 桌面微信客户端, 调用 OpenAI Assistant API 进行智能多模态消息处理。 
+本项目使用 <a href="https://github.com/lich0821/WeChatFerry" target="_blank">WeChatFerry</a> 库控制 Windows PC 桌面微信客户端, 调用 OpenAI Assistant API 进行智能多模态消息处理。 
 - 在微信中与 AI 对话 (可语音对话, 暂时只支持单聊), 自动完成绘图、生成语音、处理文件、搜索网页等多模态任务。
 - 使用 WeChatFerry 接入 Windows 桌面版微信, 对微信的兼容性高(无需实名认证), 风险低。
 - 使用 OpenAI Assistant API 自动管理群聊对话上下文。
@@ -25,9 +25,9 @@
 1. OpenAI API Key. 管理地址: https://platform.openai.com/api-keys
 注: 本项目依赖于 Assistant API，非官方的 API 大多不支持 Assistant API，请确认后使用。
 3. Windows 电脑或服务器
-4. (中国国内) 用于访问 OpenAI 的代理服务器
-5. 安装好 Python 环境 (推荐 Python 3.11) 和 Git
-   - Python [下载页面](https://www.python.org/downloads/windows/)
+4. (可选, 中国国内) 访问 OpenAI 的代理服务器 (例如 [openai-proxy](https://openai-proxy.com)), 或者使用 API 代理。
+5. 安装好 Python 环境和 Git
+   - Python [下载页面](https://www.python.org/downloads/windows/) (推荐 Python 3.11, 本项目部分依赖在 Python 3.12 以上版本无法自动安装)
    - Git [下载页面](https://git-scm.com/download/win)
 6. (可选, 供联网搜索插件使用) Bing Search API Key. [获取地址](https://www.microsoft.com/bing/apis/bing-web-search-api)
 
@@ -61,14 +61,14 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 | 配置项 | 说明 | 举例 |
 | :--- | :--- | :--- |
 | api_key | 你的 OpenAI API Key | sk-abcdefg12345678.... |
-| base_url | OpenAI API 的网址, 使用默认 API 无需改动 | https://api.openai.com/v1 |
-| proxy | 代理服务器地址, 格式为"http://地址:端口号" | http://10.0.0.10:8002 |
+| base_url | API 的网址, 使用默认 API 无需改动, 使用代理或第三方 API 时填写 | https://api.openai.com/v1 |
+| proxy | 用于访问 OpenAI 的代理服务器地址, 格式为"http://地址:端口号" | http://10.0.0.10:8002 |
 | chat_model | 默认使用的聊天模型 | gpt-4-1106-preview, gpt-3.5-turbo |
 | admins | 管理员微信号列表, 只有管理员可以使用管理员命令 | [wx1234, wx2345] |
 
 其他配置选项请参见 config.yaml 中的注释。
 
-6. 运行 main.py
+1. 运行 main.py
 ```bash
 python main.py
 ```
@@ -108,9 +108,19 @@ python main.py
 ### 工具 (插件)
 - 工具代表外部函数和 API, 可以供 AI 模型自主选择调用, 来完成额外任务, 如画图, 联网搜索等功能。
 - 使用 "$帮助" 命令显示启用的工具插件。
-- 插件配置: 在 config.yaml 中的 tools 字段, 定义了插件是否启用, 以及插件的配置选项。要禁用插件, 只需删除或者注释掉插件名。某些插件需要额外配置选项才能工作, 比如 bing_search (必应搜索) 需要 api_key 才能工作。
+- 工具配置: 在 config.yaml 中的 tools 字段, 定义了工具是否启用, 以及工具的配置选项。要禁用工具, 只需删除或者注释掉插件名。某些插件需要额外配置选项才能工作, 比如 bing_search (必应搜索) 需要 api_key 才能工作。
 - 每个工具在 Assistant 中对应一个 Function Tool, 可以在 [OpenAI Playground](https://platform.openai.com/playground) 查看。
 - 工具代码位于 tools 目录下, 继承 ToolBase 类并实现接口。
+
+工具介绍:
+- bing_search (必应搜索): 使用微软 Bing Search API 搜索互联网上的内容。
+  - 注册获取 Bing search API 见: https://www.microsoft.com/bing/apis/bing-web-search-api  
+- browse_link: 浏览网页链接。使用 Selenium 获取网页文字内容供 AI 使用。
+- image_to_text: 图片转文本。使用 gpt4-vision 模型获得图片描述。
+- text_to_image: 文本作图。 使用 dall-e 模型根据文字生成图片。
+- text_to_speech: 文本转语音。使用 OpenAI API 从文本生成语音音频。
+- audio_transcript: 语音转文本。使用 OpenAI Whipser 将语音转录成文本。
+- video_analysis: 分析视频内容。使用 opencv 截取视频图像后，用 gpt4-vision 模型分析内容。
 
 ### 其他技巧和提示
 1. 在国内无法连接官方 API 时, 可以尝试使用 API 代理, 或者使用科学上网代理。一个免费的 API 代理是[openai-proxy.com](https://www.openai-proxy.com), 将 base_url 替换成 https://api.openai-proxy.com/v1

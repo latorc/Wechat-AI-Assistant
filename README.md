@@ -23,12 +23,13 @@
 ## 部署说明
 ### 部署需要的条件:
 1. OpenAI API Key. 管理地址: https://platform.openai.com/api-keys
-2. Windows 电脑或服务器
-3. (中国国内) 用于访问 OpenAI 的代理服务器
-4. 安装好 Python 环境 (推荐 Python 3.11) 和 Git
+注: 本项目依赖于 Assistant API，非官方的 API 大多不支持 Assistant API，请确认后使用。
+3. Windows 电脑或服务器
+4. (中国国内) 用于访问 OpenAI 的代理服务器
+5. 安装好 Python 环境 (推荐 Python 3.11) 和 Git
    - Python [下载页面](https://www.python.org/downloads/windows/)
    - Git [下载页面](https://git-scm.com/download/win)
-5. (可选, 供联网搜索插件使用) Bing Search API Key. [获取地址](https://www.microsoft.com/bing/apis/bing-web-search-api)
+6. (可选, 供联网搜索插件使用) Bing Search API Key. [获取地址](https://www.microsoft.com/bing/apis/bing-web-search-api)
 
 ### 方法1: 脚本部署
 1. 到Release中下载安装包, 解压到本地

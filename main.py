@@ -5,6 +5,7 @@ import signal
 import chatbot
 import config
 import wcf_wrapper
+import openai_wrapper
 import common 
 
 def main(cfg:str):
@@ -22,14 +23,17 @@ def main(cfg:str):
         signal.signal(signal.SIGINT, handler)
         signal.signal(signal.SIGTERM, handler)    
 
+        common.logger().info("初始化OpenAI API...")
+        oaiw = openai_wrapper.OpenAIWrapper(the_config)        
+        
         # 创建机器人并运行
         common.logger().info("启动微信机器人...")
-        bot = chatbot.Chatbot(the_config, wcfw)
+        bot = chatbot.Chatbot(the_config, wcfw, oaiw)
         common.logger().info("开始运行")
         bot.start_main_loop()
         
     except Exception as e:
-        common.logger().fatal("程序发生错误, 即将退出: %s", common.error_trace(e))
+        common.logger().fatal("主程序发生错误, 即将退出: %s", common.error_trace(e))
         return
     
 

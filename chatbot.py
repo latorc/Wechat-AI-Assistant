@@ -13,18 +13,18 @@ import preset
 class Chatbot():
     """ 管理微信机器人逻辑. 管理与微信客户端 (如Wechat Ferry) 和 AI 客户端 (如 OpenAI )的交互逻辑 """
 
-    def __init__(self, config: config.Config, wcfw: WcfWrapper) -> None:
+    def __init__(self, config: config.Config, wcfw: WcfWrapper, oaiw: openai_wrapper.OpenAIWrapper) -> None:
         """ 初始化
         args:
             config (Config): Config对象 
             wcfw (WcfWrapper): Wechat Ferry Wrapper对象
+            oaiw (OpenAIWrapper): AI Wrapper对象
         """
-        self.wcfw = wcfw
-        self.config = config
         
+        self.config = config
+        self.wcfw = wcfw
+        self.openai_wrapper = oaiw
         self.chat_presets:dict[str, preset.Preset] = {}     # 每个对话的预设 {roomid或wxid: 预设}
-        common.logger().info("初始化OpenAI API...")
-        self.openai_wrapper = openai_wrapper.OpenAIWrapper(self.config)
         
     def start_main_loop(self) -> None:
         """

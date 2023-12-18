@@ -84,9 +84,11 @@ class Tool_bing_search(ToolBase):
         
         # 精简内容
         web_results = results['webPages']['value']
-        keys_to_del = ['id', 'isFamilyFriendly', 'displayUrl', 'cachedPageUrl', 'language', 'isNavigational']
+        keys_to_keep = ['name', 'url', 'snippet']
+        # keys_to_del = ['id', 'isFamilyFriendly', 'displayUrl', 'cachedPageUrl', 'language', 'isNavigational']
         for r in web_results:
-            for k in keys_to_del:
-                del r[k]
+            for k in list(r.keys()):
+                if k not in keys_to_keep:
+                    del r[k]
                 
         return str(web_results)

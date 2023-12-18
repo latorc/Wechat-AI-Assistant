@@ -31,13 +31,12 @@
    - Git [下载页面](https://git-scm.com/download/win)
 6. (可选, 供联网搜索插件使用) Bing Search API Key. [获取地址](https://www.microsoft.com/bing/apis/bing-web-search-api)
 
-### 方法1: 脚本部署
+### 方法1: 一键安装脚本 (小白友好, 包含 Python 环境)
 1. 到Release中下载安装包, 解压到本地
-2. 安装 Python 和 Git 环境
-3. 安装微信指定版本 (`3.9.2.23` 安装包已提供)
-4. 运行"安装.bat", 获取代码和安装依赖
-5. 修改 config.yaml, 添加 api_key 等必要选项
-6. "运行.bat" 开始运行程序. 程序会唤起微信, 扫码登录即可。
+2. 安装微信 Windows 桌面3.9.2.23版本 (安装包已提供)
+3. 运行"安装.bat", 脚本会安装或更新代码, 保留原有的 config.yaml 或创建新文件(位于脚本同一目录下)
+4. 编辑 config.yaml 文件
+5. 运行"运行.bat", 程序唤起微信, 登录后开始运行。
 
 ### 方法2: 手动部署
 1. 安装微信`3.9.2.23`版本 [点此下载](https://github.com/latorc/Wechat-AI-Assistant/releases/download/v0.1/WeChatSetup-3.9.2.23.exe)

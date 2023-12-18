@@ -112,10 +112,11 @@ python main.py
 - 工具代码位于 tools 目录下, 继承 ToolBase 类并实现接口。
 
 ### 其他技巧和提示
-1. 可以使用手机模拟器 (如逍遥模拟器) 登录微信, 并登录 Windows 微信客户端, 即可保持微信持续在线。
-2. 程序调用了 OpenAI 的 Assistant API. 运行时，程序将创建并修改一个名为 "wechat_assistant" 的 assistant 用于对话。你可以在 [OpenAI Playground](https://platform.openai.com/playground) 测试这个助理。
-3. 程序会上传照片和文件到 OpenAI 进行处理。你可以在 [OpenAI管理后台](https://platform.openai.com/files)查看和删除你的文件。OpenAI 不对文件本身进行收费，但是对文件的总占用空间有限制。
-4. 程序把搜索结果和网页全文都发给 OpenAI, 所以 token 使用量较大。省钱可用 gpt-3.5 模型。
+1. 在国内无法连接官方 API 时, 可以尝试使用 API 代理, 或者使用科学上网代理。一个免费的 API 代理是[openai-proxy.com](https://www.openai-proxy.com), 将 base_url 替换成 https://api.openai-proxy.com/v1
+2. 可以使用手机模拟器 (如逍遥模拟器) 登录微信, 并登录 Windows 微信客户端, 即可保持微信持续在线。
+3. 程序调用了 OpenAI 的 Assistant API. 运行时，程序将创建并修改一个名为 "wechat_assistant" 的 assistant 用于对话。你可以在 [OpenAI Playground](https://platform.openai.com/playground) 测试这个助理。
+4. 程序会上传照片和文件到 OpenAI 进行处理。你可以在 [OpenAI管理后台](https://platform.openai.com/files)查看和删除你的文件。OpenAI 不对文件本身进行收费，但是对文件的总占用空间有限制。
+5. 程序把搜索结果和网页全文都发给 OpenAI, 所以 token 使用量较大。省钱可用 gpt-3.5 模型。
 
 ## 资源
 - QQ群: 812016253 [点击加入](https://qm.qq.com/cgi-bin/qm/qr?k=CD7LTR5YAkS-VHtG5MDljRJdpbqzCsS4&jump_from=webapi&authKey=rqQ1ihDTpsyiegPfXkYoxcloXQUQp6EhG2xwWhtTP/Hh9EbRaPQ8I/2QCPbgQ8F4)

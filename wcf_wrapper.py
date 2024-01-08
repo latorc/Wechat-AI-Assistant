@@ -124,8 +124,8 @@ class WcfWrapper:
                 
             elif refer_type == 3: #图片 下载图片
                 refer_extra = self.get_msg_extra(refer_id, msg.extra)
-                if refer_extra:
-                    dl_file = self.wcf.download_image(refer_id, refer_extra, common.temp_dir())
+                if refer_extra:                    
+                    dl_file = self.get_image(refer_id, refer_extra)
                     if dl_file:
                         return ChatMsg(ContentType.image, dl_file)                    
                 common.logger().warn("无法获取引用图片, 消息id=%s", str(refer_id))
@@ -140,7 +140,7 @@ class WcfWrapper:
                     return ChatMsg(ContentType.ERROR, None)
             
             elif refer_type == 43: # 视频: 下载视频
-                video_file = self.get_attach(refer_id, msg.extra)
+                video_file = self.get_video(refer_id, msg.extra)
                 if video_file:
                     return ChatMsg(ContentType.video, video_file)
                 else: 
@@ -230,7 +230,42 @@ class WcfWrapper:
         return full_path            
 
     
-    def get_attach(self, msgid:str, extra:str) -> str:
+    def get_image(self, msgid:str, extra:str) -> str:
+        """ 下载图片。若已经下载，直接返回已经存在的文件。
+
+        Args:
+            msgid (str): 消息id
+            extra (str): 消息extra
+
+        Returns:
+            str: 下载的文件路径。若失败返回None
+        """
+        
+        """extra =  'C:/Users/georg/Documents/WeChat Files/wxid_72tjp7ciphuj22/FileStorage/Cache/2024-01/423aed714661dde93e21118c29ac4b2f/\x01C:/Users/georg/Documents/WeChat Files/wxid_72tjp7ciphuj22/FileStorage/MsgAttach/4fe37a8489e1619c6ffdbf24c8fdd6b0/Image/2024-01/4bb051cafb2e98281f2da671c255e1f6.dat'"""
+        # 获得文件主名
+        pattern = r'/([^/]+)\.[^\.]+$'
+        match = re.search(pattern, extra)
+        if not match:
+            return None        
+        main_name = match.group(1)
+        
+        # 判断文件是否已经下载。如果已经下载，直接返回存在的文件
+        tmp = common.temp_dir()
+        dl_file = None
+        for filename in os.listdir(tmp):
+            if filename.startswith(main_name+".") and os.path.isfile(os.path.join(tmp, filename)):
+                return os.path.join(tmp, filename)
+        
+        # 若不存在，调用wcf下载图片    
+        if not dl_file:
+            dl_file = self.wcf.download_image(msgid, extra, tmp)
+            if dl_file:
+                return dl_file
+            else:
+                return None
+        
+    
+    def get_video(self, msgid:str, extra:str) -> str:
         """ 下载消息附件（视频、文件）
         Args:
             msgid (str): 消息id

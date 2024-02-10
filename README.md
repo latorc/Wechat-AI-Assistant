@@ -2,13 +2,13 @@
 在微信中与 AI 助理进行多模态交互, 处理文本, 图片, 文件, 和网页链接等各类消息。
 ## 简介
 本项目使用 <a href="https://github.com/lich0821/WeChatFerry" target="_blank">WeChatFerry</a> 库控制 Windows PC 桌面微信客户端, 调用 OpenAI Assistant API 进行智能多模态消息处理。 
-- 在微信中与 AI 对话 (可语音对话, 暂时只支持单聊), 自动完成绘图、生成语音、处理文件、搜索网页等多模态任务。
+- 在微信中与 AI 对话（文字或语音）, 自动完成绘图、生成语音、处理文件、搜索网页等多模态任务。
 - 使用 WeChatFerry 接入 Windows 桌面版微信, 对微信的兼容性高(无需实名认证), 风险低。
 - 使用 OpenAI Assistant API 自动管理群聊对话上下文。
-- AI 自行判断调用代码解释器和外部工具完成任务。现有工具: bing_search (必应搜索), browse_link (浏览网页链接), image_to_text (图像转文字描述), text_to_image (文字描述作图), text_to_speech (文本转语音), video_analysis (视频分析)
+- AI 自行判断调用代码解释器和外部工具完成任务。现有工具: bing_search (必应搜索), browse_link (浏览网页链接), image_to_text (图像转文字描述), text_to_image (文字描述作图), text_to_speech (文本转语音), video_analysis (视频分析)等
 
 ### 
-- 后续计划开发: 上传文件, 使 AI 能引用文件内容 (知识库) / 语音识别, 视频分析 /AI 调用其他 API
+- 后续计划开发: 上传文件, 使 AI 能引用文件内容 (知识库) / AI 调用其他 API
 - QQ群: 812016253 [点击加入](https://qm.qq.com/cgi-bin/qm/qr?k=CD7LTR5YAkS-VHtG5MDljRJdpbqzCsS4&jump_from=webapi&authKey=rqQ1ihDTpsyiegPfXkYoxcloXQUQp6EhG2xwWhtTP/Hh9EbRaPQ8I/2QCPbgQ8F4)
 
 ## 使用案例

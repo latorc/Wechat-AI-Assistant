@@ -57,6 +57,7 @@ class OpenAIWrapper:
         
         self.voice:str = openai_config.get("voice", "alloy")
         self.voice_speed:float = openai_config.get("voice_speed", 1.0)
+        self.transcript_prompt:str = openai_config.get("transcript_prompt", "请将语音消息转录成文本")
         
         self._default_prompt = self.config.default_preset.sys_prompt    # 默认prompt来自default        
         self.tools:dict[str, toolbase.ToolBase] = self._register_tools()     # 工具列表 {名字:Tool}
@@ -97,8 +98,8 @@ class OpenAIWrapper:
         """ 显示已启用工具的帮助信息 """
         lines = []
         for t in self.tools.values():
-            lines.append(f"{t.name}: {t.desc}")
-        text = '\n'.join(lines)
+            lines.append(f"{t.name}({t.desc})")
+        text = ', '.join(lines)
         return text
             
     def create_openai_client(self) -> OpenAI:
@@ -422,7 +423,8 @@ class OpenAIWrapper:
             transcript = self.client.audio.transcriptions.create(
                 file = f,
                 model="whisper-1",
-                response_format="text"
+                response_format="text",
+                prompt=self.transcript_prompt,
             )
         return str(transcript).strip()
     

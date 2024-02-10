@@ -142,8 +142,16 @@ class Chatbot():
         else:
             return None
         
+        # return None
+        def voice_msg_trans(msgid:str):
+            ''' 转录语音消息，得到文字'''            
+            audiofile = self.wcfw.wcf.get_audio_msg(msgid, common.temp_dir()) 
+            text = self.openai_wrapper.audio_trans(audiofile)
+            common.logger().info("语音消息转录得到文字：%s", text)
+            return text        
+        
         # 过滤消息内容
-        content = self.wcfw.get_msg_text(msg).strip()     
+        text_msg = self.wcfw.get_msg_text(msg).strip()
         if msg.from_group():    #群聊消息
             # 白名单过滤
             if "$all" in self.config.group_whitelist:
@@ -152,23 +160,32 @@ class Chatbot():
                 if msg.roomid not in self.config.group_whitelist:
                     return None
             
-            if msg.from_self() :        #来自自己的消息, 如果有prefix开头, 去掉prefix; 否则忽略
+            # 群组语音消息
+            if msg.type == 34:
+                if self.config.group_voice_msg:
+                    return voice_msg_trans(msg.id)
+                else:
+                    return None
+            
+            # 群组中来自自己的消息, 如果有prefix开头, 去掉prefix; 否则忽略
+            if msg.from_self() :        
                 for p in self.config.self_prefix:
-                    if content.startswith(p):
-                        content = content.removeprefix(p).strip()
-                        return content
+                    if text_msg.startswith(p):
+                        text_msg = text_msg.removeprefix(p).strip()
+                        return text_msg
                 return None
-
-            if msg.is_at(self.wcfw.wxid):   # @我的消息, 处理
+            
+            # @我的消息, 处理
+            if msg.is_at(self.wcfw.wxid):   
                 #去掉@前缀, 获得消息正文
                 # 正则匹配: @开头 + 任意字符 + \u2005(1/4空格)或任意空白或结尾
-                content = re.sub(r"@.*?([\u2005\s]|$)", "", content).strip() 
-                return content
+                text_msg = re.sub(r"@.*?([\u2005\s]|$)", "", text_msg).strip() 
+                return text_msg
             else:   # 其他情况, 忽略
                 return None
             
         else:   #单聊消息            
-            # 微信号白名单
+            # 微信号白名单过滤
             wxcode = self.wcfw.wxid_to_wxcode(msg.sender)
             if "$all" in self.config.single_chat_whitelist:
                 pass
@@ -178,27 +195,25 @@ class Chatbot():
                 else:
                     return None
 
-            if msg.from_self() :        #来自自己的消息, 如果有prefix开头, 去掉prefix; 否则忽略
+            #来自自己的消息, 如果有prefix开头, 去掉prefix; 否则忽略
+            if msg.from_self() :        
                 for p in self.config.self_prefix:
-                    if content.startswith(p):
-                        content = content.removeprefix(p).strip()
-                        return content
+                    if text_msg.startswith(p):
+                        text_msg = text_msg.removeprefix(p).strip()
+                        return text_msg
                 return None
             
             # 来自对方消息:
             if not self.config.single_chat_prefix:  # 未定义前缀: 响应所有
                 if msg.type == 34:  # 语音
-                    # return None
-                    common.logger().info("转录语音")
-                    audiofile = self.wcfw.wcf.get_audio_msg(msg.id, common.temp_dir()) 
-                    text = self.openai_wrapper.audio_trans(audiofile)
-                    return text
+                    return voice_msg_trans(msg.id)
                 else:
-                    return content
+                    return text_msg
             else:
                 for p in self.config.single_chat_prefix:    # 已定义前缀: 只响应前缀开头的消息
-                    if content.startswith(p):
-                        return content.removeprefix(p).strip()
+                    
+                    if text_msg.startswith(p):
+                        return text_msg.removeprefix(p).strip()
                     return None
                 
         return None
@@ -279,13 +294,14 @@ class Chatbot():
         msgs = []
         msgs.append("\n# 帮助信息")
         msgs.append(f"默认模型: {self.config.OPENAI['chat_model']}")
+        msgs.append(f"是否响应群聊语音消息: {'是' if self.config.group_voice_msg else '否'}")
         txt = str(self.config.single_chat_prefix) if self.config.single_chat_prefix else "(无需前缀)"
         msgs.append(f"单聊触发前缀: {txt}")
-        msgs.append("")
-        msgs.append("## 管理员命令")
+        # msgs.append("")
+        msgs.append("## 管理员命令：")
         for k,v in self.config.admin_cmds.items():
             msgs.append(f"{k} {v.description}")
-        msgs.append("## 已启用工具")
+        msgs.append("## 已启用工具：")
         msgs.append(self.openai_wrapper.tools_help())
         text = '\n'.join(msgs)
         return text

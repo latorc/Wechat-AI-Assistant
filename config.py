@@ -107,9 +107,10 @@ class Config(object):
         self.BOT:dict = config_dict.get('bot', {})
         
         self.group_whitelist = self.BOT.get('group_whitelist', ['$all'])
+        self.group_voice_msg = self.BOT.get('group_voice_msg', True)
         self.single_chat_whitelist = self.BOT.get('single_chat_whitelist', ['$all'])
         self.self_prefix = self.BOT.get('self_prefix', [])
-        self.single_chat_prefix = self.BOT.get('single_chat_prefix', ['$ai'])
+        self.single_chat_prefix = self.BOT.get('single_chat_prefix', [])
         self.accept_friend:bool = self.BOT.get('accpet_friend', False)
         
         self.default_preset:preset.Preset = preset.get_default_preset()

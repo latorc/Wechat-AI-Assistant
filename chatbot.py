@@ -26,6 +26,15 @@ class Chatbot():
         self.openai_wrapper = oaiw
         self.chat_presets:dict[str, preset.Preset] = {}     # 每个对话的预设 {roomid或wxid: 预设}
         
+        # 读取config中的对话预设
+        for k,v in self.config.group_presets.items():
+            res = self.set_preset(k, v)
+            if res:
+                common.logger().info(f"加载群聊预设: {k} -> {v}")
+            else:
+                common.logger().warn(f"无法加载群聊预设: {k} -> {v}")
+        
+        
     def start_main_loop(self) -> None:
         """
         主循环, 接收并处理微信消息. 
@@ -253,7 +262,7 @@ class Chatbot():
             return False
         
         elif cmd_enum == AdminCmd.help:             # 显示帮助
-            log_msg = self.help_msg()       
+            log_msg = self.help_msg(receiver)       
         elif cmd_enum == AdminCmd.reload_config:    # 重新加载config            
             self.config.load_config()
             self.openai_wrapper.load_config()            
@@ -263,10 +272,8 @@ class Chatbot():
             log_msg = "已完成命令: 清除当前对话记忆"            
         elif cmd_enum == AdminCmd.load_preset:      # 为当前对话加载预设
             args = content.removeprefix(cmd_str).strip()   #获得命令参数
-            pr = preset.read_preset(args)
-            if pr:
-                self.chat_presets[receiver] = pr
-                self.openai_wrapper.set_chat_prompt(receiver, pr.sys_prompt)
+            res = self.set_preset(receiver, args)
+            if res:
                 log_msg = f"已完成命令: 加载预设{args}"
             else:
                 log_msg = f"无法加载预设{args}"
@@ -288,15 +295,39 @@ class Chatbot():
             self.wcfw.send_text(log_msg, receiver, at_list)
         return True
     
+    def set_preset(self, chatid:str, pr_name:str) -> bool:
+        """ 为对话chatid设置预设pr 
+        args:
+            chatid (str): 对话id
+            pr_name (str): 预设名字
+        returns:
+            bool: 是否成功设置预设
+        """
+        pr = preset.read_preset(pr_name)
+        if not pr:            
+            return False
+        
+        self.chat_presets[chatid] = pr
+        self.openai_wrapper.set_chat_prompt(chatid, pr.sys_prompt)
+        return True
+        
+    
             
-    def help_msg(self) -> str:
-        """ 返回帮助信息文本 """
+    def help_msg(self, chatid:str) -> str:
+        """ 返回帮助信息文本
+        args:
+            chatid (str): 对话id
+        returns:
+            str: 帮助信息文本
+        """
         msgs = []
         msgs.append("\n# 帮助信息")
         msgs.append(f"默认模型: {self.config.OPENAI['chat_model']}")
         msgs.append(f"是否响应群聊语音消息: {'是' if self.config.group_voice_msg else '否'}")
         txt = str(self.config.single_chat_prefix) if self.config.single_chat_prefix else "(无需前缀)"
         msgs.append(f"单聊触发前缀: {txt}")
+        pr = self.chat_presets.get(chatid, self.config.default_preset)
+        msgs.append(f"当前对话使用预设: {pr.name}")
         # msgs.append("")
         msgs.append("## 管理员命令：")
         for k,v in self.config.admin_cmds.items():

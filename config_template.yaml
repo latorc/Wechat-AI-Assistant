@@ -21,6 +21,8 @@ bot:  #机器人相关配置
   single_chat_whitelist: [$all] # 单聊消息只响应白名单中的微信号. '$all'则响应所有单聊消息. 默认值=[$all]  
   self_prefix: [$ai] # 来自自己的消息, 只响应该前缀开头的, 否则忽略。默认值=[]  
   single_chat_prefix: [] # 单聊中只响应该前缀开头的消息, 不设置则响应所有消息. 默认值=[]
+  group_presets:  # 为对话设置预设，一行一个，格式为"roomID: 预设名" 
+    # 123123@chatroom: "catgirl"  
 
 admin:  # 管理员相关配置
   admins: [管理员微信号]       # 管理员的微信号列表。只有管理员允许运行管理命令

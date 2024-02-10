@@ -112,7 +112,7 @@ class Config(object):
         self.self_prefix = self.BOT.get('self_prefix', [])
         self.single_chat_prefix = self.BOT.get('single_chat_prefix', [])
         self.accept_friend:bool = self.BOT.get('accpet_friend', False)
-        
+        self.group_presets:dict = self.BOT.get('group_presets', {})
         self.default_preset:preset.Preset = preset.get_default_preset()
                 
         self._load_admin_config()

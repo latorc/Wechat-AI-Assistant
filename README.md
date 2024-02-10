@@ -99,6 +99,7 @@ python main.py
 - 对AI助理使用默认命令"\$加载 <预设名>"可以为当前对话加载预设。"$预设列表"命令显示当前可用的预设及其描述。
 - <预设名>为定义在 presets 目录下的同名 yaml 配置文件。
 - default.yaml 是默认预设, 对话默认使用。
+- 可以用配置文件中的 group_presets 字段，为对话设置预设，程序启动时自动加载。
 - 要创建自己的预设, 请参考 presets 目录下的 default.yaml, 即默认的预设。复制该文件，改名成你的预设名称，并修改其中信息。
   - desc: 预设的简单描述
   - sys_prompt: 预设的系统提示词
@@ -123,7 +124,7 @@ python main.py
 
 ### 其他技巧和提示
 1. 在国内无法连接官方 API 时, 可以尝试使用 API 代理, 或者使用科学上网代理。一个免费的 API 代理是[openai-proxy.com](https://www.openai-proxy.com), 将 base_url 替换成 https://api.openai-proxy.com/v1
-2. 可以使用手机模拟器 (如逍遥模拟器) 登录微信, 并登录 Windows 微信客户端, 即可保持微信持续在线。
+2. 可以使用手机模拟器 (如逍遥模拟器) 登录微信, 并登录 Windows 微信客户端, 即可保持微信持续在线。不要打断模拟器的扫码过程，可能会触发微信检测封号。
 3. 程序调用了 OpenAI 的 Assistant API. 运行时，程序将创建并修改一个名为 "wechat_assistant" 的 assistant 用于对话。你可以在 [OpenAI Playground](https://platform.openai.com/playground) 测试这个助理。
 4. 程序会上传照片和文件到 OpenAI 进行处理。你可以在 [OpenAI管理后台](https://platform.openai.com/files)查看和删除你的文件。OpenAI 不对文件本身进行收费，但是对文件的总占用空间有限制。
 5. 程序把搜索结果和网页全文都发给 OpenAI, 所以 token 使用量较大。省钱可用 gpt-3.5 模型。

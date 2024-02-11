@@ -17,6 +17,7 @@
 
 <img src="docs/4.png" width="240px"> <img src="docs/1.jpg" width="240px">
 <img src="docs/5.jpg" width="240px"> <img src="docs/6.jpg" width="240px">
+<img src="docs/7.jpg" width="240px">
 
 ## 部署说明
 ### 部署需要的条件:

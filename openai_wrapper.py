@@ -474,7 +474,8 @@ class OpenAIWrapper:
             _, buffer = cv2.imencode('.jpg', frame)
             frames_base64.append(base64.b64encode(buffer).decode('utf-8'))
         content = []
-        content.append({"type": "text", "text": instructions + f"\nAnalyze the video based on the screenshots attached. These are {n_frames} frames taken from the video at regular time intervals. The video is {duration} seconds long."})
+        prompt = f"Attached are screenshots taken from a video. These are {n_frames} frames taken from the video at regular time intervals. The video is {duration} seconds long. Analyze the content of these images. " + instructions
+        content.append({"type": "text", "text": prompt})
         for f in frames_base64:
             content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{f}"}}) 
         
@@ -489,7 +490,7 @@ class OpenAIWrapper:
             "messages": messages,
             "max_tokens": 1000
         }
-        common.logger().info(f"调用gpt4-vision分析视频, 帧数={n_frames}, 时长(秒)={duration:.1f}")
+        common.logger().info(f"调用gpt4-vision分析视频, prompt = {prompt}")
         result = self.client.chat.completions.create(**params)
         return result.choices[0].message.content
         

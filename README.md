@@ -1,12 +1,12 @@
 # 微信 AI 助理 (Wechat AI Assistant)
-在微信中与 AI 助理进行多模态交互, 处理文本, 图片, 文件, 和网页链接等各类消息。
+在微信中与 ChatGPT AI 助理进行多模态交互, 处理问答、扮演角色、响应语音消息、分析图片和视频、总结文章和网页链接、搜索互联网等等。
 ## 简介
 本项目使用 <a href="https://github.com/lich0821/WeChatFerry" target="_blank">WeChatFerry</a> 库控制 Windows PC 桌面微信客户端, 调用 OpenAI Assistant API 进行智能多模态消息处理。 
-- 在微信中与 AI 对话（文字或语音）, 自动完成绘图、生成语音、处理文件、搜索网页等多模态任务。
+- 在微信中与 ChatGPT AI 对话（文字或语音），进行多模态交互。
 - 使用 WeChatFerry 接入 Windows 桌面版微信, 对微信的兼容性高(无需实名认证), 风险低。
 - 使用 OpenAI Assistant API 自动管理群聊对话上下文。
 - AI 自行判断调用代码解释器和外部工具完成任务。现有工具: bing_search (必应搜索), browse_link (浏览网页链接), image_to_text (图像转文字描述), text_to_image (文字描述作图), text_to_speech (文本转语音), video_analysis (视频分析)等
-- 后续计划开发: 上传文件, 使 AI 能引用文件内容 (知识库) / AI 调用其他 API
+- 后续计划开发: 上传文件, 使 AI 能引用文件内容 (知识库) / AI 调用其他 API / 企业微信和微信公众号登录
 - QQ群: 812016253 [点击加入](https://qm.qq.com/cgi-bin/qm/qr?k=CD7LTR5YAkS-VHtG5MDljRJdpbqzCsS4&jump_from=webapi&authKey=rqQ1ihDTpsyiegPfXkYoxcloXQUQp6EhG2xwWhtTP/Hh9EbRaPQ8I/2QCPbgQ8F4)
 
 ## 使用案例
@@ -29,14 +29,14 @@
    - Git [下载页面](https://git-scm.com/download/win)
 5. (可选, 供联网搜索插件使用) Bing Search API Key. [获取地址](https://www.microsoft.com/bing/apis/bing-web-search-api)
 
-### 方法1: 从Release下载
+### 方法1: 从Release下载（简单快速）
 1. 到 [Releases](https://github.com/latorc/Wechat-AI-Assistant/releases) 中下载打包好的可执行文件和微信安装文件
 2. 安装微信 Windows 桌面指定版本 (安装包已提供)。
 3. 将压缩包解压到本地。
-4. 编辑 config.yaml 文件（必填项目为openai api_key）
+4. 编辑 config.yaml 文件（必填项目为openai api_key，配置项说明见文档。）
 5. 运行"main.exe", 程序将唤起微信客户端, 登录后程序开始运行。
 
-### 方法2: 手动部署
+### 方法2: 源码手动部署（供开发使用）
 1. 安装微信`3.9.2.23`版本 [点此下载](https://github.com/latorc/Wechat-AI-Assistant/releases/download/v0.1/WeChatSetup-3.9.2.23.exe)
 2. 克隆项目代码到本地
 ```bash
@@ -52,9 +52,14 @@ call .venv\Scripts\activate.bat
 cd Wechat-AI-Assistant
 pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 ```
-5. 编辑配置文件: 重命名配置文件 config_template.yaml 为 config.yaml, 并编辑配置项。
+5. 编辑配置文件: 重命名配置文件 config_template.yaml 为 config.yaml, 并编辑配置项。配置项说明见文档。
+6. 运行 main.py
+```bash
+python main.py
+```
+程序会自动唤起微信客户端, 之后扫码登录微信桌面客户端, 即可开始使用。
 
-主要配置项说明如下:
+### 主要配置项
 | 配置项 | 说明 | 举例 |
 | :--- | :--- | :--- |
 | api_key | 你的 OpenAI API Key | sk-abcdefg12345678.... |
@@ -64,12 +69,6 @@ pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 | admins | 管理员微信号列表, 只有管理员可以使用管理员命令 | [wx1234, wx2345] |
 
 其他配置选项请参见 config.yaml 中的注释。
-
-1. 运行 main.py
-```bash
-python main.py
-```
-程序会自动唤起微信客户端, 之后扫码登录微信桌面客户端, 即可开始使用。
 
 ## 使用提示
 - 添加微信AI助理的微信好友, 或将其加入群聊中并@它, 与它进行对话。

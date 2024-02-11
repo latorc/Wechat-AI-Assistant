@@ -37,7 +37,7 @@ admin:  # 管理员相关配置
 tools:
   # 工具插件列表以及相关的配置。注释或删除工具名将禁用工具
   bing_search:  # bing 搜索     
-    api_key: 4e59e8b29c794b6882e9517188fe86bd # 注册获取 Bing search API 见: https://www.microsoft.com/bing/apis/bing-web-search-api
+    api_key: # 注册获取 Bing search API 见: https://www.microsoft.com/bing/apis/bing-web-search-api
     endpoint:    # API 入口地址. 默认使用"https://api.bing.microsoft.com" + '/v7.0/search'
   
   browse_link:  # 浏览网页

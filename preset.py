@@ -65,7 +65,7 @@ def get_default_preset() -> Preset:
     default_preset = read_preset('default')   # 对话默认采用预设
     if default_preset is None:
         common.logger().warn('无法读取默认预设default.yaml, 用None preset代替')
-        return Preset("None", None, None, None)
+        return Preset("None", None, "你是一个AI助理", None)
     else:
         return default_preset
     

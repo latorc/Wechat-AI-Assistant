@@ -474,7 +474,7 @@ class OpenAIWrapper:
             _, buffer = cv2.imencode('.jpg', frame)
             frames_base64.append(base64.b64encode(buffer).decode('utf-8'))
         content = []
-        content.append({"type": "text", "text": instructions + f"\nAnalyze the video based on the frames attached. These are {n_frames} frames taken from the video at regular time intervals. The video is {duration} seconds long."})
+        content.append({"type": "text", "text": instructions + f"\nAnalyze the video based on the screenshots attached. These are {n_frames} frames taken from the video at regular time intervals. The video is {duration} seconds long."})
         for f in frames_base64:
             content.append({"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{f}"}}) 
         

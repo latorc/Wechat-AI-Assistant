@@ -27,12 +27,13 @@ class Chatbot():
         self.chat_presets:dict[str, preset.Preset] = {}     # 每个对话的预设 {roomid或wxid: 预设}
         
         # 读取config中的对话预设
-        for k,v in self.config.group_presets.items():
-            res = self.set_preset(k, v)
-            if res:
-                common.logger().info(f"加载群聊预设: {k} -> {v}")
-            else:
-                common.logger().warn(f"无法加载群聊预设: {k} -> {v}")
+        if self.config.group_presets:
+            for k,v in self.config.group_presets.items():
+                res = self.set_preset(k, v)
+                if res:
+                    common.logger().info(f"加载群聊预设: {k} -> {v}")
+                else:
+                    common.logger().warn(f"无法加载群聊预设: {k} -> {v}")
         
         
     def start_main_loop(self) -> None:

@@ -1,6 +1,6 @@
 openai:
   # OpenAI 相关配置。OpenAI管理后台: https://platform.openai.com/api-keys
-  api_key: sk-abcdexxxxxxxxxxxxx(填写你的API Key)   # OpenAI API Key  
+  api_key: sk-abcdexxxxxxxxxxxxx   # OpenAI API Key  
   base_url: # https://api.openai-proxy.com/v1 # API的网址。原版API使用默认值: https://api.openai.com/v1  
   proxy: # 代理服务器地址。格式为"http://地址:端口号"  
   chat_model: gpt-4-turbo-preview # 聊天使用模型名称，例如：gpt-3.5-turbo-0125, gpt-4-turbo-preview. 可用模型参见(https://platform.openai.com/docs/models/overview)

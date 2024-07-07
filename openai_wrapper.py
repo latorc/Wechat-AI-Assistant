@@ -283,7 +283,7 @@ class OpenAIWrapper:
             if run.status == 'failed':
                 common.logger().warning('run id %s 运行失败:%s', run.id, str(run.last_error))
                 callback_msg(ChatMsg(ContentType.text, f"API运行失败: {run.last_error.code}"))
-            common.logger().info("Run token消耗: 输入=%s, 输出=%s, 总token=%s, 成本估计=$%.3f",
+            common.logger().info("Run 完成。token消耗: 输入=%s, 输出=%s, 总token=%s, 估计成本=$%.4f",
                 run.usage.prompt_tokens, run.usage.completion_tokens, run.usage.total_tokens,
                 run.usage.prompt_tokens/1000*0.005 + run.usage.completion_tokens/1000*0.015)
         finally:

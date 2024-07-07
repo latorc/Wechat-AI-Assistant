@@ -4,6 +4,9 @@ import logging.config
 from argparse import ArgumentParser
 import signal
 import os
+import sys
+import atexit
+import ctypes
 
 import chatbot
 import config
@@ -21,22 +24,27 @@ def main(cfg:str):
     tool_list = load_tools(the_config, oaiw)
     oaiw.add_tools(tool_list)
 
-    common.logger().info("正在创建WechatFerry实例...")
+    common.logger().info("正在创建WechatFerry实例, 请登录微信...")
     wcfw = wcf_wrapper.WcfWrapper()
 
-    # 在退出信号和Ctrl+C信号时，清理wcf并退出, 否则可能导致微信客户端异常
-    def handler(sig, frame):
-        logging.info("进行退出清理...")
+    # 在退出时清理
+    def on_exit():
         del wcfw
-        exit(0)
-    signal.signal(signal.SIGINT, handler)
-    signal.signal(signal.SIGTERM, handler)
+        common.logger().info("完成退出清理")
+    # 注册退出处理函数
+    atexit.register(on_exit)
 
+    # 设置控制台关闭事件处理程序
+    def console_handler(event):
+        if event == 2:  # CTRL_CLOSE_EVENT
+            on_exit()
+        return True
+    ctypes.windll.kernel32.SetConsoleCtrlHandler(ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_uint)(console_handler), True)
 
     # 创建机器人并运行
     common.logger().info("启动微信机器人...")
     bot = chatbot.Chatbot(the_config, wcfw, oaiw)
-    common.logger().info("开始运行")
+    common.logger().info("开始运行并接收消息")
     bot.start_main_loop()
 
 

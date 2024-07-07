@@ -13,7 +13,7 @@ openai:
   # 作图参数。参考:https://cookbook.openai.com/articles/what_is_new_with_dalle_3, 以及 api 说明
   image_model: dall-e-3   # 作图模型, 默认值: dall-e-3, 可选项: dall-e-3, dall-e-2
   image_quality: hd  # 作图质量。现在由assistant决定, 该参数暂时无效。(可选, 默认值: standard) 作图质量。选项: standard(标准), hd(高清)。
-  image_size: 1792x1024   # 作图大小, 默认值: 1024x1024, dall-e-3 支持尺寸 1024x1024, 1792x1024, 1024x1792。
+  image_size: 1024x1024   # 作图大小, 默认值: 1024x1024, dall-e-3 支持尺寸 1024x1024, 1792x1024, 1024x1792。
 
   # 语音参数。参考: https://platform.openai.com/docs/api-reference/audio/createSpeech
   voice: alloy  # 虚拟声音名字, 选项: alloy, echo, fable, onyx, nova, and shimmer. 试听: https://platform.openai.com/docs/guides/text-to-speech/voice-options

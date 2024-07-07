@@ -51,12 +51,16 @@ def logger() -> logging.Logger:
 
 def get_path(folder:str) -> pathlib.Path:
     """ 返回文件夹 Path对象. 若不存在, 创建文件夹。"""
-    py_dir = pathlib.Path(__file__).resolve().parent
-    temp_dir = py_dir / folder
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = pathlib.Path(sys._MEIPASS).parent   # pylint: disable=W0212,E1101
+    except Exception:  #pylint: disable=broad-except
+        base_path = pathlib.Path('.')
 
-    if not temp_dir.exists():
-        temp_dir.mkdir(parents=True, exist_ok=True)
-    return temp_dir
+    full_path = base_path / folder
+    if not full_path.exists():
+        full_path.mkdir(parents=True, exist_ok=True)
+    return full_path
 
 def temp_file(name:str) -> str:
     """ 返回临时文件名 """
@@ -67,15 +71,15 @@ def temp_dir() -> str:
     return str(get_path(TEMP_DIR).resolve())
 
 def download_file(url:str, filename:str, proxy:str = None) -> int:
-    """ 从网址下载文件 
-    
+    """ 从网址下载文件
+
     Args:
         url (str): 网址
         filename (str): 保存的文件名, 带路径
         proxy (str): 代理服务器，例如 "http://1.2.3.4:555". 默认None不适用
-    
+
     Returns:
-        int: 0=成功, 其他数字=失败    
+        int: 0=成功, 其他数字=失败
     """
     # 代理
     if proxy:
@@ -96,7 +100,7 @@ def download_file(url:str, filename:str, proxy:str = None) -> int:
     except Exception as e:
         return 3
 
-        
+
 def error_info(e:Exception) -> str:
     """ 返回给用户解释异常的说明文字 """
     if isinstance(e, openai.AuthenticationError):
@@ -107,16 +111,16 @@ def error_info(e:Exception) -> str:
         return "OpenAI API错误 - 响应超时"
     else:
         return str(e)
-    
+
 def error_trace(e:Exception) -> str:
     """ 显示异常追踪信息 Log用
-    
+
     Args:
         e (Exception): 异常
-    
+
     Returns:
         str: 异常信息的追踪文本
-    """        
+    """
     exc_type, exc_value, exc_traceback = sys.exc_info()
     trace_list = traceback.format_exception(exc_type, exc_value, exc_traceback)
     trace_text = ''.join(trace_list)

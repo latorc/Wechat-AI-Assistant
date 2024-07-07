@@ -279,6 +279,15 @@ class WcfWrapper:
         return full_path
 
 
+    def downloaded_image(self, main_name:str) -> str:
+        """ 如果图片已经下载，返回路径。否则返回 None"""
+
+        tmp = common.get_path(common.TEMP_DIR)
+        for file in tmp.iterdir():
+            if file.is_file() and file.name.startswith(f"{main_name}."):
+                return file
+        return None
+
     def get_image(self, msgid:str, extra:str) -> str:
         """ 下载图片。若已经下载，直接返回已经存在的文件。
 
@@ -299,20 +308,15 @@ class WcfWrapper:
         main_name = match.group(1)
 
         # 判断文件是否已经下载。如果已经下载，直接返回存在的文件
-        tmp = common.temp_dir()
-        dl_file = None
-        for filename in os.listdir(tmp):
-            if filename.startswith(main_name+".") and os.path.isfile(os.path.join(tmp, filename)):
-                return os.path.join(tmp, filename)
+        dl_file = self.downloaded_image(main_name)
+        if dl_file:
+            return dl_file
 
         # 若不存在，调用wcf下载图片
-        if not dl_file:
-            dl_file = self.wcf.download_image(msgid, extra, tmp)
-            if dl_file:
-                return dl_file
-            else:
-                return None
-
+        dl_file = self.wcf.download_image(msgid, extra, common.temp_dir())
+        if dl_file:
+            return dl_file
+        return None
 
     def get_video(self, msgid:str, extra:str) -> str:
         """ 下载消息附件（视频、文件）

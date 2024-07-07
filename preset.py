@@ -1,6 +1,7 @@
-import pathlib
-import yaml
+""" presets 对话预设"""
 import os
+import yaml
+
 import common
 
 class Preset():
@@ -8,7 +9,7 @@ class Preset():
     name:str
     sys_prompt:str
     msg_format:str
-    
+
     def __init__(self, name:str, desc:str, sys_prompt:str, msg_format:str) -> None:
         self.name = name
         self.desc = desc
@@ -17,28 +18,28 @@ class Preset():
 
     def construct_msg(self, msg:str, wxcode:str, nickname:str) -> str:
         """ 根据预设格式构造发送给AI的消息"""
-        
+
         # 发送给 AI 的消息格式, 用于对消息进行包装后发送. 省略则发送源消息
         # 可用变量:
         # $message=原消息, $wxcode=发送者微信号, $nickname=发送者微信昵称
         if self.msg_format is None:
             return msg
-        
+
         text = self.msg_format.format(message=msg, wxcode=wxcode, nickname=nickname)
         return text
-            
+
 def read_preset(name:str) -> Preset:
     """ 从presets目录的yaml配置文件读取指定名称
-    
+
     Args:
         name (str): 预设名称, 即不包含'.yaml'的文件名
-        
+
     Returns:
         Preset: preset对象, 如果失败返回None
     """
-        
+
     try:
-        file = pathlib.Path(common.PRESET_DIR) / f"{name}.yaml"
+        file = common.get_path(common.PRESET_DIR) / f"{name}.yaml"
         with open(file, "rb") as f:
             yaml_preset:dict = yaml.safe_load(f)
         desc = yaml_preset.get("desc", "")
@@ -68,7 +69,7 @@ def get_default_preset() -> Preset:
         return Preset("None", None, "你是一个AI助理", None)
     else:
         return default_preset
-    
+
 if __name__ == "__main__":
     # Test
     pr = read_preset('default')

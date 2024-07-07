@@ -366,8 +366,14 @@ class Chatbot():
         # pylint: disable=no-member
         frames = []
         cap = cv2.VideoCapture(video_file)
+        # backend = cap.getBackendName()
+        # common.logger().info("backend = %s", backend)
         if not cap.isOpened():
+            common.logger().warning("错误:%s", cap.get(cv2.CAP_PROP_FOURCC))
+            # 获取 cap 打开文件时的错误信息
+
             raise RuntimeError(f"无法打开视频文件 {video_file}")
+
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = cap.get(cv2.CAP_PROP_FPS)
 

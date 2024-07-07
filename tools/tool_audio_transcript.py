@@ -28,7 +28,7 @@ class Tool_audio_transcript(ToolBase):
                 "properties": {
                     "file_path": {
                         "type": "string",
-                        "description": "Local path of the AUDIO file on user's computer"
+                        "description": "Local path of the audio file on user's computer"
                     }
                 },
                 "required": ["file_path"]

@@ -2,6 +2,7 @@
 import queue
 import re
 import os
+import time
 from typing import Tuple
 
 import cv2
@@ -52,6 +53,7 @@ class Chatbot():
                 note = f"收到消息 {self.wcfw.msg_preview_str(msg)}"
                 common.logger().info(note)
             except queue.Empty:
+                time.sleep(0.01)
                 continue  # 无消息，继续
             except Exception as e:
                 common.logger().error("接收微信消息错误: %s", common.error_trace(e))
@@ -69,7 +71,7 @@ class Chatbot():
             msg (WxMsg): 消息对象. 群号: msg.roomid, 发送者微信ID: msg.sender, 消息内容: msg.content
         """
 
-        content = self._filter_wxmsg(msg)
+        content = self._filter_preprocess_wxmsg(msg)
         if content is None:
             return
 
@@ -148,7 +150,7 @@ class Chatbot():
             self.wcfw.send_text(f"对不起, 响应该消息时发生错误: {common.error_info(e)}", receiver, at_list)
 
 
-    def _filter_wxmsg(self, msg:WxMsg) -> str:
+    def _filter_preprocess_wxmsg(self, msg:WxMsg) -> str:
         """ 判断是否响应这条消息
         如果响应, 返回消息原文(去掉前缀)
         如果忽略, 返回None

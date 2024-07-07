@@ -13,7 +13,7 @@ from common import ContentType, ChatMsg, MSG_CALLBACK
 from tools import toolbase
 
 
-ASSISTANT_NAME = 'wechat_assistant'
+ASSISTANT_NAME = 'Wechat_AI_Assistant'
 ASSISTANT_DESC = "用于微信机器人的assistant"
 
 class OpenAIWrapper:
@@ -283,13 +283,14 @@ class OpenAIWrapper:
             if run.status == 'failed':
                 common.logger().warning('run id %s 运行失败:%s', run.id, str(run.last_error))
                 callback_msg(ChatMsg(ContentType.text, f"API运行失败: {run.last_error.code}"))
+            common.logger().info("Run token消耗: 输入=%s, 输出=%s, 总token=%s, 成本估计=$%.3f",
+                run.usage.prompt_tokens, run.usage.completion_tokens, run.usage.total_tokens,
+                run.usage.prompt_tokens/1000*0.005 + run.usage.completion_tokens/1000*0.015)
         finally:
             if run.status == 'requires_action': # 若中途出错退出, 需要取消运行, 避免thread被锁住
                 common.logger().warning("Run状态=reuires_action, 取消运行以解锁thread")
                 self.client.beta.threads.runs.cancel(run.id, thread_id=thread_id)
-            common.logger().info("Run 结束, token消耗: 输入=%s, 输出=%s, 总token=%s, 成本估计=$%.3f",
-                run.usage.prompt_tokens, run.usage.completion_tokens, run.usage.total_tokens,
-                run.usage.prompt_tokens/1000*0.005 + run.usage.completion_tokens/1000*0.015)
+
 
 
     def _process_new_msgs(self, thread_id, last_msg_id, callback_msg:MSG_CALLBACK) -> str:

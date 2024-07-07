@@ -1,48 +1,52 @@
+# Wechat AI Assistant 配置文件
+# 大多数配置项留空会使用默认值，请看说明。
+# 必填项目是 api_key。如果你在中国大陆，可能会需要设置 base_url 和/或 proxy 来连接 OpenAI 服务器。
+# 图片和视频分析现在仅支持 gpt-4o 模型
 openai:
   # OpenAI 相关配置。OpenAI管理后台: https://platform.openai.com/api-keys
-  api_key: sk-abcdexxxxxxxxxxxxx   # OpenAI API Key  
-  base_url: # https://api.openai-proxy.com/v1 # API的网址。原版API使用默认值: https://api.openai.com/v1  
-  proxy: # 代理服务器地址。格式为"http://地址:端口号"  
-  chat_model: gpt-4-turbo-preview # 聊天使用模型名称，例如：gpt-3.5-turbo-0125, gpt-4-turbo-preview. 可用模型参见(https://platform.openai.com/docs/models/overview)
-  
-  # 作图参数, 参见(https://cookbook.openai.com/articles/what_is_new_with_dalle_3) 以及 api 说明
-  image_model: dall-e-3   # (可选, 默认值: dall-e-3) 作图模型, 选项: dall-e-3, dall-e-2
-  image_quality: hd  # 现在作图质量由模型决定, 该参数暂时无效。(可选, 默认值: standard) 作图质量。选项: standard(标准), hd(高清)。
-  image_size: 1024x1024   # (可选, 默认值: 1024x1024) 作图大小, dall-e-3 支持尺寸 1024x1024, 1792x1024, 1024x1792。
-  
-  # 语音参数. 参考: https://platform.openai.com/docs/api-reference/audio/createSpeech
-  voice: alloy  # 虚拟配音演员 alloy, echo, fable, onyx, nova, and shimmer. 试听: https://platform.openai.com/docs/guides/text-to-speech/voice-options
-  voice_speed: 1.1  # 语音速度, 可选 0.25-4.0 (默认1.0)
-  transcript_prompt: "请转录用户的语音消息，可能使用的语言是：简体中文和English"  # 为语音转录提供一段提示词，以提高识别正确率
+  api_key: sk-   # 【必填】OpenAI API Key
+  base_url: # API入口的网址。默认值: https://api.openai.com/v1
+  proxy: # 连接OpenAI的代理服务器地址。默认为空。例子"http://10.0.0.100:1234"
+  chat_model: gpt-4o # AI 使用的模型，例如 gpt-4o 模型介绍参见(https://platform.openai.com/docs/models/overview)
+  # 现在图片和视频分析仅支持 gpt-4o 模型
+
+  # 作图参数。参考:https://cookbook.openai.com/articles/what_is_new_with_dalle_3, 以及 api 说明
+  image_model: dall-e-3   # 作图模型, 默认值: dall-e-3, 可选项: dall-e-3, dall-e-2
+  image_quality: hd  # 作图质量。现在由assistant决定, 该参数暂时无效。(可选, 默认值: standard) 作图质量。选项: standard(标准), hd(高清)。
+  image_size: 1792x1024   # 作图大小, 默认值: 1024x1024, dall-e-3 支持尺寸 1024x1024, 1792x1024, 1024x1792。
+
+  # 语音参数。参考: https://platform.openai.com/docs/api-reference/audio/createSpeech
+  voice: alloy  # 虚拟声音名字, 选项: alloy, echo, fable, onyx, nova, and shimmer. 试听: https://platform.openai.com/docs/guides/text-to-speech/voice-options
+  voice_speed: 1.1  # 语音速度, 默认1.0, 可选 0.25-4.0
+  transcript_prompt: "请转录用户的语音消息, 可能使用的语言是: 简体中文和English"  # (可选)为语音转录提供的一段提示词，以提高识别正确率
 
 bot:  #机器人相关配置
   group_whitelist: [$all]  # 允许响应的群roomId (例如 2xxxxxx3@chatroom) 如果包含'$all'则响应所有群. 默认值=[$all]. 在群中使用默认命令 "$id" 查看群聊id
-  group_voice_msg: True    # 是否响应群中的所有语音消息. 默认值=True
-  single_chat_whitelist: [$all] # 单聊消息只响应白名单中的微信号. '$all'则响应所有单聊消息. 默认值=[$all]  
-  self_prefix: [$ai] # 来自自己的消息, 只响应该前缀开头的, 否则忽略。默认值=[]  
+  group_voice_msg: true    # 是否响应群中的所有语音消息. 默认值=true
+  single_chat_whitelist: [$all] # 单聊消息只响应白名单中的微信号. '$all'则响应所有单聊消息. 默认值=[$all]
+  self_prefix: [$ai] # 来自自己的消息, 只响应该前缀开头的,  ,M.JNHBGVFDCVGBHN M,FHN M=[]
   single_chat_prefix: [] # 单聊中只响应该前缀开头的消息, 不设置则响应所有消息. 默认值=[]
-  group_presets:  # 为对话设置预设，一行一个，格式为"roomID: 预设名" 
-    # 123123@chatroom: "catgirl"  
+  group_presets:  # 为对话设置预设，一行一个，格式为 roomID: "预设名"。例如: 1234567890@chatroom: "default"
 
 admin:  # 管理员相关配置
-  admins: [管理员微信号]       # 管理员的微信号列表。只有管理员允许运行管理命令
+  admins: [your_wx_code]       # 管理员的微信号列表。只有管理员允许运行管理命令
+  # 以下为每个命令定义关键词。聊天输入关键词可触发命令
   help: "$帮助"               # 显示帮助信息
   reload_config: "$刷新配置"  # 重新载入程序配置（本文件）
   clear_chat: "$清除"         # 为当前对话清除记忆
   load_preset: "$加载"        # 为当前对话加载预设
   reset_preset: "$重置预设"   # 为当前对话重置预设到默认预设
-  list_preset: "$预设列表"    # 显示可用的预设列表 
+  list_preset: "$预设列表"    # 显示可用的预设列表
   chat_id: "$id"              # 显示当前对话的id
+
 
 tools:
   # 工具插件列表以及相关的配置。注释或删除工具名将禁用工具
-  bing_search:  # bing 搜索     
-    api_key: # 注册获取 Bing search API 见: https://www.microsoft.com/bing/apis/bing-web-search-api
-    endpoint:    # API 入口地址. 默认使用"https://api.bing.microsoft.com" + '/v7.0/search'
-  
-  browse_link:  # 浏览网页
+  bing_search:  # bing 搜索
+    api_key:  # 注册获取 Bing search API 见: https://www.microsoft.com/bing/apis/bing-web-search-api
+    endpoint: # API 入口地址. 默认使用"https://api.bing.microsoft.com" + '/v7.0/search'
 
-  image_to_text:  # 图片转文本
+  browse_link:  # 浏览网页
 
   text_to_image:  # 文本作图
 
@@ -50,4 +54,4 @@ tools:
 
   audio_transcript: # 语音转文本
 
-  video_analysis: # 分析视频内容
+  mahjong_agari:  # 日麻和牌分析

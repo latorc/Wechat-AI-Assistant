@@ -13,6 +13,7 @@ import common
 from tools import toolbase
 
 def main(cfg:str):
+    """ 主程序入口"""
     the_config = config.Config(cfg)    # 初始化配置
 
     common.logger().info("初始化OpenAI API...")
@@ -40,38 +41,38 @@ def main(cfg:str):
 
 
 def load_tools(cfg:config.Config, oaiw:openai_wrapper.OpenAIWrapper) -> dict:
-        """ 读取工具列表
-        return (dict): 工具字典, key=工具名, value=工具对象"""
-        # 把你的Tool类对象加入这个列表, 会载入使用
-        from tools import tool_text_to_image
-        from tools import tool_browse_link
-        from tools import tool_text_to_speech
-        from tools import tool_bing_search
-        from tools import tool_audio_transcript
-        from tools import tool_mahjong_agari
+    """ 读取工具列表
+    return (dict): 工具字典, key=工具名, value=工具对象"""
+    # 把你的Tool类对象加入这个列表, 会载入使用
+    from tools import tool_text_to_image
+    from tools import tool_browse_link
+    from tools import tool_text_to_speech
+    from tools import tool_bing_search
+    from tools import tool_audio_transcript
+    from tools import tool_mahjong_agari
 
-        tool_list:list[toolbase.ToolBase] = [
-            tool_text_to_image.Tool_text_to_image(cfg, oaiw),
-            tool_text_to_speech.Tool_text_to_speech(cfg, oaiw),
-            tool_browse_link.Tool_browse_link(cfg),
-            tool_bing_search.Tool_bing_search(cfg),
-            tool_audio_transcript.Tool_audio_transcript(cfg, oaiw),
-            tool_mahjong_agari.Tool_Mahjong_Agari(cfg),
-        ]
+    tool_list:list[toolbase.ToolBase] = [
+        tool_text_to_image.Tool_text_to_image(cfg, oaiw),
+        tool_text_to_speech.Tool_text_to_speech(cfg, oaiw),
+        tool_browse_link.Tool_browse_link(cfg),
+        tool_bing_search.Tool_bing_search(cfg),
+        tool_audio_transcript.Tool_audio_transcript(cfg, oaiw),
+        tool_mahjong_agari.Tool_mahjong_agari(cfg),
+    ]
 
-        tools = {}
-        for t in tool_list:
-            if t.validate_config(): # 检查配置, 启用通过检查的工具
-                common.logger().info("载入工具 %s (%s)", t.name, t.desc)
-                tools[t.name] = t
-            else:
-                common.logger().info("忽略工具 %s (%s)", t.name, t.desc)
-        return tools
+    tools = {}
+    for t in tool_list:
+        if t.validate_config(): # 检查配置, 启用通过检查的工具
+            common.logger().info("载入工具 %s (%s)", t.name, t.desc)
+            tools[t.name] = t
+        else:
+            common.logger().info("忽略工具 %s (%s)", t.name, t.desc)
+    return tools
 
 if __name__ == "__main__":
     try:
         parser = ArgumentParser()
-        parser.add_argument('-c', type=str, default=common.DEFAULT_CONFIG, help=f'使用配置文件')
+        parser.add_argument('-c', type=str, default=common.DEFAULT_CONFIG, help='使用的配置文件路径')
         c = parser.parse_args().c
         main(c)
     except Exception as e:

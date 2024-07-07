@@ -202,11 +202,13 @@ class OpenAIWrapper:
                 v = []
 
         thread_id = self.get_thread(chatid)
-        log_msg = f"调用Assistant处理(Thread={thread_id}): {text_msg}"
+        log_msg = f"调用Assistant处理(Thread={thread_id}):\n{text_msg}"
         if images:
-            log_msg += f" (图片:{', '.join(images)})"
+            names = [pathlib.Path(image).name for image in images]
+            log_msg += f" (图片:{', '.join(names)})"
         if files:
-            log_msg += f" (附件:{', '.join(files)})"
+            names = [pathlib.Path(f).name for f in files]
+            log_msg += f" (附件:{', '.join(names)})"
         common.logger().info(log_msg)
 
         # 上传 images
@@ -236,7 +238,7 @@ class OpenAIWrapper:
 
         # 创建消息到 thread
         tools_object = [{"type": "code_interpreter"}, {"type":"file_search"}]
-        attach_object = [{"file_id": file_id, "tools": tools_object} for file_id in files]
+        attach_object = [{"file_id": file_id, "tools": tools_object} for file_id in attach_files]
         text_msg = self.client.beta.threads.messages.create(
             thread_id=thread_id,
             role="user",

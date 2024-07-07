@@ -263,9 +263,19 @@ class WcfWrapper:
 
         extra = match.group(1)
         new_extra:str = extra.decode('utf-8')
-        wxid = new_extra.split('\\')[0]
-        path1 = sample_extra.split(wxid)[0]
-        full_path = (pathlib.Path(path1) / pathlib.Path(new_extra)).as_posix()
+        # 拼接new_extra和sample_extra获得文件路径
+        keyword = "FileStorage"
+        # 获取sample_extra keyword之前的部分
+        part1 = sample_extra.split(keyword)[0]
+        # 获取new_extra中，第一个keyword之后的部分
+        key_index = new_extra.find(keyword)
+        if key_index == -1: #没找到
+            part2 = new_extra
+        else:
+            part2 = new_extra[key_index:]
+
+        # 拼接 part1 part2 得到完整path
+        full_path = (pathlib.Path(part1) / pathlib.Path(part2)).resolve().as_posix()
         return full_path
 
 

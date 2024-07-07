@@ -230,6 +230,18 @@ class WcfWrapper:
             common.logger().error("读取引用消息发生错误: %s", common.error_trace(e))
             return ChatMsg(ContentType.ERROR, None)
 
+    def get_msg_from_db(self, msgid:str) -> dict:
+        """ 从数据库查找 msgid 的信息,返回dict. 找不到则返回 None"""
+        dbs = self.wcf.get_dbs()
+        # find all strings from dbs like "MSG#.db" where # is a single digit number
+        msg_dbs = [db for db in dbs if re.match(r"MSG\d\.db", db)]
+        query = f"SELECT * FROM MSG WHERE MsgSvrID={msgid}"
+        for db in msg_dbs:
+            msg_data = self.wcf.query_sql(db, query)
+            if msg_data:
+                return msg_data[0]
+        return None
+
     def get_msg_extra(self, msgid:str, sample_extra:str) -> str:
         """ 获取历史消息的extra
 
@@ -241,11 +253,10 @@ class WcfWrapper:
             str: 消息extra, 若无法获取返回None
         """
 
-        query = f"SELECT * FROM MSG WHERE MsgSvrID={msgid}"
-        msg_data = self.wcf.query_sql('MSG0.db', query)
+        msg_data = self.get_msg_from_db(msgid)
         if not msg_data:
             return None
-        bextra = msg_data[0].get('BytesExtra')
+        bextra = msg_data.get('BytesExtra')
 
         # 多种pattern搜索
         patterns = [

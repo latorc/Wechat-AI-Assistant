@@ -1,5 +1,4 @@
-from typing import Tuple
-from collections import namedtuple
+""" WcfWrapper类 通过 WechatFerry 管理微信交互 """
 import os
 import re
 import pathlib
@@ -261,7 +260,7 @@ class WcfWrapper:
         # 多种pattern搜索
         patterns = [
             b'\x08\x04\x12.(.*?)\x1a',          # 图片
-            b'\x08\x04\x12.(.*?)$',    # 文件
+            b'\x08\x04\x12.(.*?)$',             # 文件
             b'\x08\x04\x12.(.*?)\x1a'           # 自己发的文件
             ]
         match = None

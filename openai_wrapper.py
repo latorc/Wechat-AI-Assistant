@@ -320,17 +320,17 @@ class OpenAIWrapper:
         """ 处理工具调用, 返回结果 """
         tool = self.tools.get(name, None)
         if tool is None:
-            return f"调用函数失败. 未定义函数: {name}"
+            return f"调用工具失败. 未定义工具: {name}"
 
         try:
-            common.logger().info("调用函数=%s, 参数=%s:", name, arguments)
+            common.logger().info("调用工具=%s, 参数=%s:", name, arguments)
             result =  tool.process_toolcall(arguments, callback_msg)
             common.logger().info("提交Toolcall(%s)结果(长度=%d): %s", name, len(result), result[0:250])
-            return result
         except Exception as e:
-            result = f"调用函数失败. 错误: {common.error_info(e)}"
+            result = f"调用工具失败. 错误: {common.error_info(e)}"
             common.logger().error("调用工具失败: %s", common.error_trace(e))
 
+        return result
 
     def text_to_image(self, prompt:str, quality:str=None) -> str:
         """ 调用dall-e作图, 并下载图片到本地

@@ -5,15 +5,15 @@ class Tool_browse_link(ToolBase):
     """ 工具: browse_link
     浏览网页 返回链接内容 """
 
-    
+
     @property
     def name(self) -> str:
         return "browse_link"
-    
+
     @property
     def desc(self) -> str:
         return "访问链接获取内容"
-    
+
     @property
     def function_json(self) -> dict:
         FUNCTION_BROWSE_LINK = {
@@ -28,11 +28,11 @@ class Tool_browse_link(ToolBase):
                 },
                 "required": ["url"]
             },
-            "description": """Access url and retrieve web page content. 访问url并获取网页内容. 
+            "description": """Access url and retrieve web page content. 访问url并获取网页内容.
                 Call this function if user explicitly asks you to access certain url and get web page content."""
         }
         return FUNCTION_BROWSE_LINK
-    
+
     def process_toolcall(self, arguments:str, callback_msg:MSG_CALLBACK) -> str:
         """ 浏览网页返回文字内容 """
         args = json.loads(arguments)

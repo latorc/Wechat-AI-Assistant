@@ -54,4 +54,4 @@ tools:
 
   audio_transcript: # 语音转文本
 
-  mahjong_agari:  # 日麻和牌分析
+  # mahjong_agari:  # 日麻和牌分析

@@ -16,11 +16,12 @@ class WcfWrapper:
         # self.wxid = self.wcf.get_self_wxid()    #自己的微信ID
         self.userinfo = self.wcf.get_user_info()
         self.my_name = self.userinfo['name']
+        self.my_wxid = self.userinfo['wxid']
         self.msg_types = self.wcf.get_msg_types()
         self.msg_types[49] = '引用,文件,共享链接,..'
         self.contacts = self.read_contacts()
         self.wcf_lock = threading.Lock()
-        common.logger().info("Wechat Ferry 初始化完成。登录微信=%s",self.userinfo['name'])
+        common.logger().info("Wechat Ferry 初始化完成。登录微信=%s (wxid=%s)", self.my_name, self.my_wxid)
         self.wcf.enable_receiving_msg() # 开始接收消息
 
     def __del__(self):
@@ -66,7 +67,7 @@ class WcfWrapper:
         if c:
             return c['name']
         else:
-            return None
+            return ""
         # # sender = self.wcf.get_info_by_wxid(wxid)['name']
         # if wxid in self.contacts:
         #     sender = self.contacts[wxid]['name']
@@ -78,7 +79,7 @@ class WcfWrapper:
         if c:
             return c['code']
         else:
-            return None
+            return ""
 
     def get_msg(self) -> WxMsg:
         """ 从wechat ferry获取消息, 无消息抛异常
@@ -101,13 +102,13 @@ class WcfWrapper:
     def is_msg_at_me(self, msg:WxMsg) -> bool:
         """ 判断消息是否@自己"""
         members = self.wcf.get_chatroom_members(msg.roomid)
-        my_wxid = next((k for k, v in members.items() if v == self.my_name), None)
-        if not my_wxid:
-            common.logger().warning("无法找到自己的wxid, 无法判断是否@自己")
-            return False
+        # my_wxid = next((k for k, v in members.items() if v == self.my_name), None)
+        # if not my_wxid:
+        #     common.logger().warning("无法找到自己的wxid, 无法判断是否@自己")
+        #     return False
         if re.findall(r"@(?:所有人|all|All)", msg.content):
             return False  # 排除 @ 所有人
-        if re.findall(f"<atuserlist>[\s|\S]*({my_wxid})[\s|\S]*</atuserlist>", msg.xml):
+        if re.findall(f"<atuserlist>[\s|\S]*({self.my_wxid})[\s|\S]*</atuserlist>", msg.xml):
             return True  # 在 @ 清单里
         else:
             return False

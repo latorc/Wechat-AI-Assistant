@@ -53,7 +53,7 @@ class Chatbot():
                 note = f"收到消息 {self.wcfw.msg_preview_str(msg)}"
                 common.logger().info(note)
             except queue.Empty:
-                time.sleep(0.01)
+                time.sleep(0.001)
                 continue  # 无消息，继续
             except Exception as e:
                 common.logger().error("接收微信消息错误: %s", common.error_trace(e))

@@ -307,7 +307,7 @@ class OpenAIWrapper:
                     callback_msg(ChatMsg(ContentType.text, msg_text))
                 elif c.type == 'image_file':
                     dl_image = self.download_openai_file(c.image_file.file_id)
-                    callback_msg(ChatMsg(ContentType.text, dl_image))
+                    callback_msg(ChatMsg(ContentType.image, dl_image))
 
             for f in m.attachments:     # 处理每个附件
                 dl_file = self.download_openai_file(f)

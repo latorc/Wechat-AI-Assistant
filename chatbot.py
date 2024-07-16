@@ -85,12 +85,14 @@ class Chatbot():
         # 确定回复对象
         if msg.from_group():
             receiver = msg.roomid
+            nickname = self.wcfw.wcf.get_alias_in_chatroom(msg.sender, msg.roomid)
             if msg.from_self():
                 at_list = ""
             else:
                 at_list = msg.sender
         else:   #单聊
             receiver = msg.sender
+            nickname = self.wcfw.wxid_to_nickname(msg.sender)
             at_list = ""
 
         # 发送者是管理员, 并且是命令时, 处理命令并直接返回
@@ -106,7 +108,11 @@ class Chatbot():
 
         # 根据预设加上格式
         preset = self.chat_presets.get(receiver, self.config.default_preset)
-        text = preset.construct_msg(content, self.wcfw.wxid_to_wxcode(msg.sender), self.wcfw.wxid_to_nickname(msg.sender))
+        code_or_id = self.wcfw.wxid_to_wxcode(msg.sender)
+        if not code_or_id:
+            code_or_id = msg.sender
+
+        text = preset.construct_msg(content, code_or_id, nickname)
 
         ### 调用 AI 处理消息
         # 回调函数, 处理 AI 返回消息

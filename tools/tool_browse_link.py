@@ -41,5 +41,5 @@ class Tool_browse_link(ToolBase):
         # common.logger().info("正在获得链接内容: %s", url)
         proxy = self.config.OPENAI.get('proxy', None)   # 使用openai proxy
         br = browser.Browser(proxy)
-        text = br.webpage_content(url)
+        text,_image = br.webpage_content(url)
         return text

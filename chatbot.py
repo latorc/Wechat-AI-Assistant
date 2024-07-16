@@ -4,6 +4,7 @@ import re
 import os
 import time
 from typing import Tuple
+from functools import partial
 
 import cv2
 from wcferry import WxMsg
@@ -15,6 +16,7 @@ from common import ContentType, ChatMsg
 import openai_wrapper
 import preset
 from tools import toolbase
+import live_tools
 
 
 class Chatbot():
@@ -35,12 +37,17 @@ class Chatbot():
 
         # 读取config中的对话预设
         if self.config.group_presets:
-            for k,v in self.config.group_presets.items():
-                res = self.set_preset(k, v)
+            for k,bili_rid in self.config.group_presets.items():
+                res = self.set_preset(k, bili_rid)
                 if res:
-                    common.logger().info("加载群聊预设: %s,%s -> %s", k, self.wcfw.wxid_to_nickname(k), v)
+                    common.logger().info("加载群聊预设: %s,%s -> %s", k, self.wcfw.wxid_to_nickname(k), bili_rid)
                 else:
-                    common.logger().warning("无法为群聊加载预设: %s,%s -> %s", k, self.wcfw.wxid_to_nickname(k), v)
+                    common.logger().warning("无法为群聊加载预设: %s,%s -> %s", k, self.wcfw.wxid_to_nickname(k), bili_rid)
+
+        # 直播通知工具
+        self.live_tools = live_tools.LiveMonitor(self.config.live_tools, self.wcfw)
+
+
 
     def start_main_loop(self) -> None:
         """
@@ -277,18 +284,22 @@ class Chatbot():
         cmd_str, cmd_enum = self._match_admin_cmd(content)
         # 处理命令
         log_msg = None
+        wx_msg = None
         if cmd_enum is None:
             return False
 
         elif cmd_enum == config.AdminCmd.help:             # 显示帮助
-            log_msg = self.help_msg(receiver)
+            log_msg = "显示帮助信息"
+            wx_msg = self.help_msg(receiver)
         elif cmd_enum == config.AdminCmd.reload_config:    # 重新加载config
             self.config.load_config()
             self.openai_wrapper.load_config()
             log_msg = "已完成命令:重新加载配置"
+            wx_msg = log_msg
         elif cmd_enum == config.AdminCmd.clear_chat:       # 清除记忆
             self.openai_wrapper.clear_chat_thread(receiver)
             log_msg = "已完成命令: 清除当前对话记忆"
+            wx_msg = log_msg
         elif cmd_enum == config.AdminCmd.load_preset:      # 为当前对话加载预设
             args = content.removeprefix(cmd_str).strip()   #获得命令参数
             res = self.set_preset(receiver, args)
@@ -296,22 +307,30 @@ class Chatbot():
                 log_msg = f"已完成命令: 加载预设{args}"
             else:
                 log_msg = f"无法加载预设{args}"
+            wx_msg = log_msg
 
         elif cmd_enum == config.AdminCmd.reset_preset:   # 为当前对话重置预设
             self.chat_presets.pop(receiver, None)
             self.openai_wrapper.clear_chat_prompt(receiver) #删除对应的对话预设
             log_msg = "已完成重置预设"
+            wx_msg = log_msg
         elif cmd_enum == config.AdminCmd.list_preset:  # 预设列表
-            log_msg = preset.list_preset()
+            log_msg = "列出可用预设"
+            wx_msg = preset.list_preset()
         elif cmd_enum == config.AdminCmd.chat_id:  # 显示当前对话的id
             log_msg = f"当前对话id: {receiver}"
-
+            wx_msg = log_msg
+        elif cmd_enum == config.AdminCmd.test_msg:  # 发送测试卡片消息
+            log_msg = "发送测试卡片消息"
+            self.wcfw.send_test_msg(receiver)
         else:
             log_msg = f"未实现命令:{content}({cmd_enum.name})"
+            wx_msg = log_msg
 
         if log_msg:
             common.logger().info(log_msg)
-            self.wcfw.send_text(log_msg, receiver, at_list)
+        if wx_msg:
+            self.wcfw.send_text(wx_msg, receiver, at_list)
         return True
 
     def set_preset(self, chatid:str, pr_name:str) -> bool:
@@ -329,7 +348,6 @@ class Chatbot():
         self.chat_presets[chatid] = pr
         self.openai_wrapper.set_chat_prompt(chatid, pr.sys_prompt)
         return True
-
 
     def help_msg(self, chatid:str) -> str:
         """ 返回帮助信息文本

@@ -430,6 +430,17 @@ class WcfWrapper:
         with self.wcf_lock:
             return self.wcf.send_file(file, receiver)
 
+    def send_test_msg(self, receiver:str) -> int:
+        """ 发送测试卡片消息 """
+        self.wcf.send_rich_text(
+            "name",
+            "account",
+            "测试卡片消息",
+            "summary summary 1 1 2 2 3 3 ",
+            "https://baidu.com",
+            "https://www.baidu.com/img/PCtm_d9c8750bed0b3c7d089fa7d55720d6cf.png",
+            receiver)
+
     def search_msg(self):
         """ 测试历史消息 """
 

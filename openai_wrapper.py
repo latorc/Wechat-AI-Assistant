@@ -232,6 +232,8 @@ class OpenAIWrapper:
             attach_files.append(fid)
 
         # 创建附带图片的消息
+        if not text_msg:
+            text_msg = ""
         content = [{"type":"text", "text":text_msg}]
         for f in image_files:
             content.append({"type":"image_file", "image_file":{"file_id":f, "detail": "high"}})

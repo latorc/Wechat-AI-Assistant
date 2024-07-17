@@ -36,19 +36,21 @@ class WcfWrapper:
 
     def msg_preview_str(self, msg:WxMsg) -> str:
         """ 返回消息预览字符串 """
-        sender = self.wxid_to_nickname(msg.sender)
+        # 群聊：群id|sender, 群名|发送人nickname
+        # 单聊：sender, 发送人nickname
         if msg.from_group():
-            name = self.wxid_to_nickname(msg.roomid) + "|" + sender
-            chatid = msg.roomid
+            room_name = self.wxid_to_nickname(msg.roomid)
+            nickname = self.wcf.get_chatroom_members(msg.roomid).get(msg.sender, "")            
+            sender_str = f"{msg.roomid}|{msg.sender},{room_name}|{nickname}"
         else:
-            name = sender
-            chatid = msg.sender
+            nickname = self.wxid_to_nickname(msg.sender)
+            sender_str = f"{msg.sender},{nickname}"
 
         if msg.is_text():
             content = msg.content
         else:
             content = f"类型={msg.type}({self.msg_types.get(msg.type,'未知类型')})/{self.get_content_type(msg)}"
-        preview =  f"({msg.id},{chatid},{name}): {content}"
+        preview =  sender_str + ": " + content
         return preview
 
     def wxid_to_contact(self, wxid:str) -> dict:

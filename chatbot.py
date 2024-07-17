@@ -85,7 +85,8 @@ class Chatbot():
         # 确定回复对象
         if msg.from_group():
             receiver = msg.roomid
-            nickname = self.wcfw.wcf.get_alias_in_chatroom(msg.sender, msg.roomid)
+            nickname = self.wcfw.wcf.get_chatroom_members(msg.roomid).get(msg.sender, "")
+
             if msg.from_self():
                 at_list = ""
             else:

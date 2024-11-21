@@ -40,7 +40,7 @@ class WcfWrapper:
         # 单聊：sender, 发送人nickname
         if msg.from_group():
             room_name = self.wxid_to_nickname(msg.roomid)
-            nickname = self.wcf.get_chatroom_members(msg.roomid).get(msg.sender, "")            
+            nickname = self.wcf.get_chatroom_members(msg.roomid).get(msg.sender, "")
             sender_str = f"{msg.roomid}|{msg.sender},{room_name}|{nickname}"
         else:
             nickname = self.wxid_to_nickname(msg.sender)
@@ -345,7 +345,9 @@ class WcfWrapper:
             if os.path.exists(filename): # 文件还存在
                 return filename
             else:
-                pass
+                self.wcf.download_attach(msgid, filename, "")
+                return filename
+
         else:
             filename = common.temp_file(f"Wechat_video_{common.timestamp()}.mp4")
 

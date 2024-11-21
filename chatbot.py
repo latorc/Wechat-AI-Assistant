@@ -129,10 +129,10 @@ class Chatbot():
                 match refer_msg.type:   # 根据引用类型处理
                     case ContentType.text:
                         # 引用文本
-                        text = text + f"\n(引用文本:\n{refer_msg.content})"
+                        text = text + f"\n-----\n消息附带文本:{refer_msg.content})"
                     case ContentType.link:
                         # 引用链接
-                        text = text + f"\n(引用链接:\n{refer_msg.content})"
+                        text = text + f"\n-----\n消息附带链接:{refer_msg.content})"
                     case ContentType.image:
                         # 图片
                         images.append(refer_msg.content)
@@ -148,13 +148,11 @@ class Chatbot():
                         # self.openai_wrapper.run_video_msg(receiver, text, refer_msg.content, callback_msg)
                     case ContentType.ERROR:
                         # 处理错误
-                        self.wcfw.send_text("获取引用内容发生错误", receiver, at_list)
-                        return
+                        text += "\n-----\n(无法获取引用的消息)"
                     case _:
                         # 其他
                         # tp == WxMsgType.UNSUPPORTED
-                        self.wcfw.send_text("抱歉, 不支持引用这类消息", receiver, at_list)
-                        return
+                        text += "\n-----\n(暂时不支持引用该类型消息)"
 
             # 调用 OpenAI 运行消息 (阻塞直到全部消息处理结束)
             self.openai_wrapper.run_msg(receiver, text, images, files, callback_msg)
@@ -397,7 +395,7 @@ class Chatbot():
             common.logger().warning("错误:%s", cap.get(cv2.CAP_PROP_FOURCC))
             # 获取 cap 打开文件时的错误信息
 
-            raise RuntimeError(f"无法打开视频文件 {video_file}")
+            raise RuntimeError("无法打开视频文件（可能还没有下载完，请稍候再试）")
 
         frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
         fps = cap.get(cv2.CAP_PROP_FPS)
@@ -424,7 +422,7 @@ class Chatbot():
             cv2.imwrite(image_file, frame)
             image_files.append(image_file)
 
-        instructions = "\n_________\n额外指示:请假装你可以查看视频,请根据附带提供的视频截图分析视频内容。" \
+        instructions = "\n-----\n额外指示:请假装你可以查看视频,请根据附带提供的视频截图分析视频内容。" \
             f"视频的长度是{duration:.2f}秒,这里从视频中以固定时间间隔截取帧了{n_frames}帧截图。" \
             "你要假扮作你看到的是一个完整的视频。请把视频作为一个整体分析,不要提及你看到的是单帧截图。"
 

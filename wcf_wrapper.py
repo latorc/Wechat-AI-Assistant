@@ -341,22 +341,19 @@ class WcfWrapper:
             str: 下载的文件路径, 若失败返回None
         """
         filename = self.get_msg_extra(msgid, extra)
-        if filename: # 原来下载过
-            if os.path.exists(filename): # 文件还存在
-                return filename
-            else:
-                self.wcf.download_attach(msgid, filename, "")
-                return filename
-
-        else:
+        if not filename:
             filename = common.temp_file(f"Wechat_video_{common.timestamp()}.mp4")
 
-        # 需要重新下载
-        res = self.wcf.download_attach(msgid, filename, "")
-        if res == 0:
+        if os.path.exists(filename): # 文件还存在
             return filename
         else:
-            return None
+            # 需要重新下载
+            res = self.wcf.download_attach(msgid, filename, "")
+            if res == 0:
+                file_exists = common.wait_for_file(filename, 2)
+                return filename     # 无论如何先返回文件名
+            else:
+                return None
 
     def send_message(self, chat_msg:ChatMsg, receiver:str, at_list:str="") -> int:
         """ Universal 通过微信发送各种类型消息

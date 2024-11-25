@@ -17,4 +17,4 @@ sys_prompt: >
 # 发送给 AI 的消息格式, 用于对消息进行包装后发送. 省略则发送源消息
 # 可用变量:
 # {message}=原消息, {wxcode}=发送者微信号, {nickname}=发送者微信昵称
-# msg_format: "{wxcode}|{nickname}): {message}"
+# msg_format: "({wxcode}|{nickname}): {message}"

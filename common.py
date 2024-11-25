@@ -1,5 +1,6 @@
 """ 常量和公共函数"""
 import logging
+import time
 from typing import Callable
 import requests
 import pathlib
@@ -69,6 +70,26 @@ def temp_file(name:str) -> str:
 def temp_dir() -> str:
     """ 返回临时文件夹 """
     return str(get_path(TEMP_DIR).resolve())
+
+def wait_for_file(file:str, duration:float = 3) -> bool:
+    """等待文件存在，阻塞，直到超时
+
+    Args:
+        file (str): 文件完整路径
+        duration (float, optional): 最多等待时间（秒）
+
+    Returns:
+        bool: True 文件存在。 False 直到超时文件不存在
+    """
+    file_path = pathlib.Path(file)
+    start_time = time.time()
+    while True:
+        if file_path.exists():
+            return True
+        if time.time() > start_time + duration:
+            # timeout, wait fail
+            return False
+        time.sleep(0.1)
 
 def download_file(url:str, filename:str, proxy:str = None) -> int:
     """ 从网址下载文件
